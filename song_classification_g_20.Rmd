@@ -1,0 +1,76 @@
+---
+title: "Statlearn - homework II"
+output: html_document
+---
+
+# Part I -  Song genre classification 
+
+```{r}
+suppressMessages(require(signal, quietly = T))
+library(help = signal)
+suppressMessages(require(audio, quietly = T)) 
+library(help = audio)
+
+suppressMessages(require(wrassp,  quietly = T))
+library(wrassp)
+#library(warbleR)
+library(tuneR)
+library(help = tuneR)
+library(audiolyzR)s
+
+```
+
+## Data description 
+```{r}
+# My path to the data 
+auPath <- "hw_data"
+# List the .au files
+auFiles <- list.files(auPath, pattern=glob2rx('*.au'), full.names=TRUE)
+
+# Number of files 
+n_songs <- length(auFiles)
+n_songs
+
+```
+
+we have a total of 150 songs to work on .
+
+```{r}
+
+# Load an audio file, e.g. the first one in the list above
+x <- read.AsspDataObj(auFiles)
+x
+
+# Take a look
+names(x)
+dim(x$audio)
+head(x$audio)   # actual sound wave
+
+attributes(x)
+attributes(x)$sampleRate
+
+# Number of records
+numRecs.AsspDataObj(x)
+
+# and we can of course also plot these samples 
+# (only plot every 10th element to accelerate plotting)
+plot(seq(0,numRecs.AsspDataObj(x) - 1, 10) / rate.AsspDataObj(x), 
+     x$audio[c(TRUE, rep(FALSE,9))], 
+     type='l', 
+     xlab='time (s)', 
+     ylab='Audio samples')
+
+```
+
+
+
+```{r}
+str(auFiles)
+#attributes(auFiles)
+
+## Let's try to get file in order 
+ord = c(1:150)
+ordFileList = paste0(rep('hw_data/',150),paste0(ord,rep('.au',150)))
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
