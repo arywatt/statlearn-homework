@@ -1,0 +1,656 @@
+\documentclass[]{article}
+\usepackage{lmodern}
+\usepackage{amssymb,amsmath}
+\usepackage{ifxetex,ifluatex}
+\usepackage{fixltx2e} % provides \textsubscript
+\ifnum 0\ifxetex 1\fi\ifluatex 1\fi=0 % if pdftex
+  \usepackage[T1]{fontenc}
+  \usepackage[utf8]{inputenc}
+\else % if luatex or xelatex
+  \ifxetex
+    \usepackage{mathspec}
+  \else
+    \usepackage{fontspec}
+  \fi
+  \defaultfontfeatures{Ligatures=TeX,Scale=MatchLowercase}
+\fi
+% use upquote if available, for straight quotes in verbatim environments
+\IfFileExists{upquote.sty}{\usepackage{upquote}}{}
+% use microtype if available
+\IfFileExists{microtype.sty}{%
+\usepackage{microtype}
+\UseMicrotypeSet[protrusion]{basicmath} % disable protrusion for tt fonts
+}{}
+\usepackage[margin=1in]{geometry}
+\usepackage{hyperref}
+\hypersetup{unicode=true,
+            pdftitle={Statlearn - homework II},
+            pdfborder={0 0 0},
+            breaklinks=true}
+\urlstyle{same}  % don't use monospace font for urls
+\usepackage{color}
+\usepackage{fancyvrb}
+\newcommand{\VerbBar}{|}
+\newcommand{\VERB}{\Verb[commandchars=\\\{\}]}
+\DefineVerbatimEnvironment{Highlighting}{Verbatim}{commandchars=\\\{\}}
+% Add ',fontsize=\small' for more characters per line
+\usepackage{framed}
+\definecolor{shadecolor}{RGB}{248,248,248}
+\newenvironment{Shaded}{\begin{snugshade}}{\end{snugshade}}
+\newcommand{\KeywordTok}[1]{\textcolor[rgb]{0.13,0.29,0.53}{\textbf{#1}}}
+\newcommand{\DataTypeTok}[1]{\textcolor[rgb]{0.13,0.29,0.53}{#1}}
+\newcommand{\DecValTok}[1]{\textcolor[rgb]{0.00,0.00,0.81}{#1}}
+\newcommand{\BaseNTok}[1]{\textcolor[rgb]{0.00,0.00,0.81}{#1}}
+\newcommand{\FloatTok}[1]{\textcolor[rgb]{0.00,0.00,0.81}{#1}}
+\newcommand{\ConstantTok}[1]{\textcolor[rgb]{0.00,0.00,0.00}{#1}}
+\newcommand{\CharTok}[1]{\textcolor[rgb]{0.31,0.60,0.02}{#1}}
+\newcommand{\SpecialCharTok}[1]{\textcolor[rgb]{0.00,0.00,0.00}{#1}}
+\newcommand{\StringTok}[1]{\textcolor[rgb]{0.31,0.60,0.02}{#1}}
+\newcommand{\VerbatimStringTok}[1]{\textcolor[rgb]{0.31,0.60,0.02}{#1}}
+\newcommand{\SpecialStringTok}[1]{\textcolor[rgb]{0.31,0.60,0.02}{#1}}
+\newcommand{\ImportTok}[1]{#1}
+\newcommand{\CommentTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textit{#1}}}
+\newcommand{\DocumentationTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\newcommand{\AnnotationTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\newcommand{\CommentVarTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\newcommand{\OtherTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{#1}}
+\newcommand{\FunctionTok}[1]{\textcolor[rgb]{0.00,0.00,0.00}{#1}}
+\newcommand{\VariableTok}[1]{\textcolor[rgb]{0.00,0.00,0.00}{#1}}
+\newcommand{\ControlFlowTok}[1]{\textcolor[rgb]{0.13,0.29,0.53}{\textbf{#1}}}
+\newcommand{\OperatorTok}[1]{\textcolor[rgb]{0.81,0.36,0.00}{\textbf{#1}}}
+\newcommand{\BuiltInTok}[1]{#1}
+\newcommand{\ExtensionTok}[1]{#1}
+\newcommand{\PreprocessorTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textit{#1}}}
+\newcommand{\AttributeTok}[1]{\textcolor[rgb]{0.77,0.63,0.00}{#1}}
+\newcommand{\RegionMarkerTok}[1]{#1}
+\newcommand{\InformationTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\newcommand{\WarningTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\newcommand{\AlertTok}[1]{\textcolor[rgb]{0.94,0.16,0.16}{#1}}
+\newcommand{\ErrorTok}[1]{\textcolor[rgb]{0.64,0.00,0.00}{\textbf{#1}}}
+\newcommand{\NormalTok}[1]{#1}
+\usepackage{graphicx,grffile}
+\makeatletter
+\def\maxwidth{\ifdim\Gin@nat@width>\linewidth\linewidth\else\Gin@nat@width\fi}
+\def\maxheight{\ifdim\Gin@nat@height>\textheight\textheight\else\Gin@nat@height\fi}
+\makeatother
+% Scale images if necessary, so that they will not overflow the page
+% margins by default, and it is still possible to overwrite the defaults
+% using explicit options in \includegraphics[width, height, ...]{}
+\setkeys{Gin}{width=\maxwidth,height=\maxheight,keepaspectratio}
+\IfFileExists{parskip.sty}{%
+\usepackage{parskip}
+}{% else
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{6pt plus 2pt minus 1pt}
+}
+\setlength{\emergencystretch}{3em}  % prevent overfull lines
+\providecommand{\tightlist}{%
+  \setlength{\itemsep}{0pt}\setlength{\parskip}{0pt}}
+\setcounter{secnumdepth}{0}
+% Redefines (sub)paragraphs to behave more like sections
+\ifx\paragraph\undefined\else
+\let\oldparagraph\paragraph
+\renewcommand{\paragraph}[1]{\oldparagraph{#1}\mbox{}}
+\fi
+\ifx\subparagraph\undefined\else
+\let\oldsubparagraph\subparagraph
+\renewcommand{\subparagraph}[1]{\oldsubparagraph{#1}\mbox{}}
+\fi
+
+%%% Use protect on footnotes to avoid problems with footnotes in titles
+\let\rmarkdownfootnote\footnote%
+\def\footnote{\protect\rmarkdownfootnote}
+
+%%% Change title format to be more compact
+\usepackage{titling}
+
+% Create subtitle command for use in maketitle
+\providecommand{\subtitle}[1]{
+  \posttitle{
+    \begin{center}\large#1\end{center}
+    }
+}
+
+\setlength{\droptitle}{-2em}
+
+  \title{Statlearn - homework II}
+    \pretitle{\vspace{\droptitle}\centering\huge}
+  \posttitle{\par}
+    \author{}
+    \preauthor{}\postauthor{}
+    \date{}
+    \predate{}\postdate{}
+  
+
+\begin{document}
+\maketitle
+
+\section{Part I - Song genre
+classification}\label{part-i---song-genre-classification}
+
+\subsection{Installing and importing
+libraries}\label{installing-and-importing-libraries}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{# this part is to be executed only once to install libraries we need }
+\CommentTok{# i kindly suggest you run this on windows OS}
+\CommentTok{# But if you feel like  solving R dependencies hell on linux... give it a try .}
+\CommentTok{# about macOS , don't really know}
+\CommentTok{# }
+\CommentTok{# }
+\CommentTok{# install.packages('signal')}
+\CommentTok{# install.packages('audio')}
+\CommentTok{# install.packages('wrassp')}
+\CommentTok{# install.packages('warbleR')}
+\CommentTok{# install.packages('tuneR')}
+\CommentTok{# install.packages('audiolyzR')}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{# then we import all libraries needed here}
+\KeywordTok{suppressMessages}\NormalTok{(}\KeywordTok{require}\NormalTok{(signal, }\DataTypeTok{quietly =}\NormalTok{ T))}
+\KeywordTok{library}\NormalTok{(signal)}
+
+\KeywordTok{suppressMessages}\NormalTok{(}\KeywordTok{require}\NormalTok{(audio, }\DataTypeTok{quietly =}\NormalTok{ T)) }
+\KeywordTok{library}\NormalTok{(audio)}
+
+\KeywordTok{suppressMessages}\NormalTok{(}\KeywordTok{require}\NormalTok{(wrassp,  }\DataTypeTok{quietly =}\NormalTok{ T))}
+\KeywordTok{library}\NormalTok{(wrassp)}
+
+
+\KeywordTok{library}\NormalTok{(warbleR)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## Loading required package: maps
+\end{verbatim}
+
+\begin{verbatim}
+## Loading required package: tuneR
+\end{verbatim}
+
+\begin{verbatim}
+## 
+## Attaching package: 'tuneR'
+\end{verbatim}
+
+\begin{verbatim}
+## The following object is masked from 'package:audio':
+## 
+##     play
+\end{verbatim}
+
+\begin{verbatim}
+## Loading required package: seewave
+\end{verbatim}
+
+\begin{verbatim}
+## 
+## Attaching package: 'seewave'
+\end{verbatim}
+
+\begin{verbatim}
+## The following object is masked from 'package:signal':
+## 
+##     unwrap
+\end{verbatim}
+
+\begin{verbatim}
+## Loading required package: NatureSounds
+\end{verbatim}
+
+\begin{verbatim}
+## 
+## NOTE: functions are being renamed (run 'print(new_function_names)' to see new names). Both old and new names are available in this version 
+##  Please see citation('warbleR') for use in publication
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{library}\NormalTok{(tuneR)}
+\KeywordTok{library}\NormalTok{(audiolyzR)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## Loading required package: hexbin
+\end{verbatim}
+
+\begin{verbatim}
+## Loading required package: RJSONIO
+\end{verbatim}
+
+\begin{verbatim}
+## Loading required package: plotrix
+\end{verbatim}
+
+\begin{verbatim}
+## 
+## Attaching package: 'plotrix'
+\end{verbatim}
+
+\begin{verbatim}
+## The following object is masked from 'package:seewave':
+## 
+##     rescale
+\end{verbatim}
+
+\subsection{Reading and describing
+Data}\label{reading-and-describing-data}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{# My path to the data }
+\NormalTok{auPath <-}\StringTok{ "data_example"}
+
+\CommentTok{# List the .au files}
+\NormalTok{auFiles <-}\StringTok{ }\KeywordTok{list.files}\NormalTok{(auPath, }\DataTypeTok{pattern=}\KeywordTok{glob2rx}\NormalTok{(}\StringTok{'*.au'}\NormalTok{), }\DataTypeTok{full.names=}\OtherTok{TRUE}\NormalTok{)}
+\NormalTok{auFiles}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## [1] "data_example/f1.au" "data_example/f2.au"
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{# Number of files }
+\NormalTok{N <-}\StringTok{ }\KeywordTok{length}\NormalTok{(auFiles)}
+\NormalTok{N}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## [1] 2
+\end{verbatim}
+
+we have a total of \{N\} songs in our dataset .
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{str}\NormalTok{(auFiles)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+##  chr [1:2] "data_example/f1.au" "data_example/f2.au"
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{#attributes(auFiles)}
+\NormalTok{## Let's try to get file in order }
+\NormalTok{ord =}\StringTok{ }\KeywordTok{c}\NormalTok{(}\DecValTok{1}\OperatorTok{:}\NormalTok{N)}
+\NormalTok{ordFileList =}\StringTok{ }\KeywordTok{paste0}\NormalTok{(}\KeywordTok{rep}\NormalTok{(}\KeywordTok{paste0}\NormalTok{(auPath,}\StringTok{'/f'}\NormalTok{)),}\KeywordTok{paste0}\NormalTok{(ord,}\KeywordTok{rep}\NormalTok{(}\StringTok{'.au'}\NormalTok{,N)))}
+\KeywordTok{str}\NormalTok{(ordFileList)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+##  chr [1:2] "data_example/f1.au" "data_example/f2.au"
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{# Load an audio file, e.g. the first one in the list above}
+\NormalTok{x <-}\StringTok{ }\KeywordTok{read.AsspDataObj}\NormalTok{(ordFileList[}\DecValTok{1}\NormalTok{])}
+\KeywordTok{str}\NormalTok{(}\KeywordTok{attributes}\NormalTok{(x))}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## List of 10
+##  $ names       : chr "audio"
+##  $ trackFormats: chr "INT16"
+##  $ sampleRate  : num 22050
+##  $ filePath    : chr "data_example/f1.au"
+##  $ origFreq    : num 0
+##  $ startTime   : num 0
+##  $ startRecord : int 1
+##  $ endRecord   : int 666820
+##  $ class       : chr "AsspDataObj"
+##  $ fileInfo    : int [1:2] 15 2
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{#Then we set a fixed samples length for all files}
+\CommentTok{# as the minimum lenght of all of them }
+\NormalTok{fixedLength =}\StringTok{ }\DecValTok{22050} \OperatorTok{*}\StringTok{ }\DecValTok{30} \CommentTok{# default length}
+
+
+\ControlFlowTok{for}\NormalTok{ (i }\ControlFlowTok{in} \DecValTok{1}\OperatorTok{:}\NormalTok{N) \{}
+\NormalTok{  x <-}\StringTok{ }\KeywordTok{read.AsspDataObj}\NormalTok{(auFiles[i])}
+\NormalTok{  min =}\StringTok{ }\KeywordTok{attributes}\NormalTok{(x)}\OperatorTok{$}\NormalTok{endRecord   }\CommentTok{# the samples length of the current file}
+\NormalTok{  fixedLength <-}\StringTok{ }\KeywordTok{ifelse}\NormalTok{(fixedLength}\OperatorTok{<=}\NormalTok{min, fixedLength, min) }\CommentTok{# we take the minimum}
+\NormalTok{\}}
+
+\NormalTok{fixedLength}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## [1] 661500
+\end{verbatim}
+
+We can see from the output that The records were made at a sample rate
+of 22050hz for a duration of 30 seconds and therefore contains around
+22050 * 30 = 661500 samples
+
+Now lets' plot rthe first file samples to geta general idea
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{# We }
+\CommentTok{# (only plot every 10th element to accelerate plotting)}
+
+\NormalTok{x =}\StringTok{ }\KeywordTok{read.AsspDataObj}\NormalTok{(ordFileList[}\DecValTok{1}\NormalTok{])}
+\NormalTok{x}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## Assp Data Object of file data_example/f1.au.
+## Format: SND (binary)
+## 666820 records at 22050 Hz
+## Duration: 30.241270 s
+## Number of tracks: 1 
+##   audio (1 fields)
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{ith =}\StringTok{ }\DecValTok{22050} \OperatorTok{/}\DecValTok{5} \CommentTok{# ith element to plot . basically we are plotting elements each 0.2s}
+
+\NormalTok{x_axe =}\StringTok{ }\KeywordTok{seq}\NormalTok{(}\DecValTok{0}\NormalTok{,}\KeywordTok{numRecs.AsspDataObj}\NormalTok{(x) }\OperatorTok{-}\StringTok{ }\DecValTok{1}\NormalTok{, ith) }\OperatorTok{/}\StringTok{ }\KeywordTok{rate.AsspDataObj}\NormalTok{(x)}
+\KeywordTok{length}\NormalTok{(x_axe)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## [1] 152
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{y_axe =}\StringTok{  }\NormalTok{x}\OperatorTok{$}\NormalTok{audio[}\KeywordTok{c}\NormalTok{(}\OtherTok{TRUE}\NormalTok{, }\KeywordTok{rep}\NormalTok{(}\OtherTok{FALSE}\NormalTok{,ith}\OperatorTok{-}\DecValTok{1}\NormalTok{))]}
+\KeywordTok{length}\NormalTok{(y_axe)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## [1] 152
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{plot}\NormalTok{(x_axe,}
+\NormalTok{     y_axe,}
+     \DataTypeTok{type=}\StringTok{'l'}\NormalTok{,}
+     \DataTypeTok{xlab=}\StringTok{'time (s)'}\NormalTok{,}
+     \DataTypeTok{ylab=}\StringTok{'Audio samples'}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\includegraphics{song_classification_g_20_files/figure-latex/unnamed-chunk-6-1.pdf}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{suppressMessages}\NormalTok{(}\KeywordTok{require}\NormalTok{(tuneR, }\DataTypeTok{quietly =}\NormalTok{ T))}
+\NormalTok{?Wave}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## starting httpd help server ... done
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{?WaveMC}
+\NormalTok{?getWavPlayer}
+\NormalTok{?play}
+
+\CommentTok{# Transform}
+\NormalTok{xwv <-}\StringTok{ }\KeywordTok{Wave}\NormalTok{( }\KeywordTok{as.numeric}\NormalTok{(x}\OperatorTok{$}\NormalTok{audio[}\DecValTok{1}\OperatorTok{:}\NormalTok{fixedLength]), }\DataTypeTok{samp.rate =} \KeywordTok{rate.AsspDataObj}\NormalTok{(x), }\DataTypeTok{bit =} \DecValTok{16}\NormalTok{)}
+\KeywordTok{setWavPlayer}\NormalTok{(}\StringTok{"afplay"}\NormalTok{) }\CommentTok{# needed for MAC OS not for Windoze}
+\CommentTok{# play(xwv) # do not run in Markdown}
+\KeywordTok{plot}\NormalTok{(xwv)}
+\end{Highlighting}
+\end{Shaded}
+
+\includegraphics{song_classification_g_20_files/figure-latex/unnamed-chunk-7-1.pdf}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{xw.dwn =}\StringTok{ }\KeywordTok{downsample}\NormalTok{(xwv, }\DataTypeTok{samp.rate =} \DecValTok{11025}\NormalTok{)}
+\NormalTok{xwv}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## 
+## Wave Object
+##  Number of Samples:      661500
+##  Duration (seconds):     30
+##  Samplingrate (Hertz):   22050
+##  Channels (Mono/Stereo): Mono
+##  PCM (integer format):   TRUE
+##  Bit (8/16/24/32/64):    16
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{xw.dwn}\OperatorTok{@}\NormalTok{samp.rate}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## [1] 11025
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{xw.dwn}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## 
+## Wave Object
+##  Number of Samples:      330750
+##  Duration (seconds):     30
+##  Samplingrate (Hertz):   11025
+##  Channels (Mono/Stereo): Mono
+##  PCM (integer format):   TRUE
+##  Bit (8/16/24/32/64):    16
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{?attributes}
+
+\KeywordTok{str}\NormalTok{(xwv)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## Formal class 'Wave' [package "tuneR"] with 6 slots
+##   ..@ left     : num [1:661500] -13260 -10389 -8663 -8034 -8125 ...
+##   ..@ right    : num(0) 
+##   ..@ stereo   : logi FALSE
+##   ..@ samp.rate: num 22050
+##   ..@ bit      : num 16
+##   ..@ pcm      : logi TRUE
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{?powspec}
+\NormalTok{out =}\StringTok{ }\KeywordTok{powspec}\NormalTok{( }\KeywordTok{as.numeric}\NormalTok{(x}\OperatorTok{$}\NormalTok{audio[}\DecValTok{1}\OperatorTok{:}\NormalTok{fixedLength]), }\DataTypeTok{sr =} \KeywordTok{rate.AsspDataObj}\NormalTok{(x))}
+\CommentTok{# The output is a matrix, where each column represents a power spectrum }
+\CommentTok{# for a given time frame and each row represents a frequency.}
+\KeywordTok{dim}\NormalTok{(out)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## [1]  512 3005
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{# }
+\KeywordTok{image}\NormalTok{(out)}
+\end{Highlighting}
+\end{Shaded}
+
+\includegraphics{song_classification_g_20_files/figure-latex/unnamed-chunk-8-1.pdf}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{# Spetral info ------------------------------------------------------------}
+
+\CommentTok{# calculate the fundamental frequency contour}
+\NormalTok{f0vals =}\StringTok{ }\KeywordTok{ksvF0}\NormalTok{(}\StringTok{"data_example/f1.au"}\NormalTok{, }\DataTypeTok{toFile=}\NormalTok{F)}
+\CommentTok{# plot the fundamental frequency contour}
+\KeywordTok{plot}\NormalTok{(}\KeywordTok{seq}\NormalTok{(}\DecValTok{0}\NormalTok{,}\KeywordTok{numRecs.AsspDataObj}\NormalTok{(f0vals) }\OperatorTok{-}\StringTok{ }\DecValTok{1}\NormalTok{) }\OperatorTok{/}\StringTok{ }\KeywordTok{rate.AsspDataObj}\NormalTok{(f0vals) }\OperatorTok{+}
+\StringTok{       }\KeywordTok{attr}\NormalTok{(f0vals, }\StringTok{'startTime'}\NormalTok{),}
+\NormalTok{     f0vals}\OperatorTok{$}\NormalTok{F0, }
+     \DataTypeTok{type=}\StringTok{'l'}\NormalTok{, }
+     \DataTypeTok{xlab=}\StringTok{'time (s)'}\NormalTok{, }
+     \DataTypeTok{ylab=}\StringTok{'F0 frequency (Hz)'}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\includegraphics{song_classification_g_20_files/figure-latex/unnamed-chunk-9-1.pdf}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{# STFT --------------------------------------------------------------------}
+
+
+
+\CommentTok{# Short Time Fourier Transform (default values)}
+\CommentTok{# fs       <- rate.AsspDataObj(x)   # sampling rate}
+\NormalTok{fs       <-}\StringTok{ }\NormalTok{xw.dwn}\OperatorTok{@}\NormalTok{samp.rate}
+\NormalTok{winsize  <-}\StringTok{ }\DecValTok{2048}
+\NormalTok{nfft     <-}\StringTok{ }\DecValTok{2048}
+\NormalTok{hopsize  <-}\StringTok{ }\DecValTok{512}
+\NormalTok{noverlap <-}\StringTok{ }\NormalTok{winsize }\OperatorTok{-}\StringTok{ }\NormalTok{hopsize}
+\CommentTok{# sp  <- specgram(x = x$audio, n = nfft, Fs = fs, window = winsize, overlap = noverlap)}
+\NormalTok{sp  <-}\StringTok{ }\KeywordTok{specgram}\NormalTok{(}\DataTypeTok{x =}\NormalTok{ xw.dwn}\OperatorTok{@}\NormalTok{left, }\DataTypeTok{n =}\NormalTok{ nfft, }\DataTypeTok{Fs =}\NormalTok{ fs, }\DataTypeTok{window =}\NormalTok{ winsize, }\DataTypeTok{overlap =}\NormalTok{ noverlap)}
+\NormalTok{sp}
+\end{Highlighting}
+\end{Shaded}
+
+\includegraphics{song_classification_g_20_files/figure-latex/unnamed-chunk-10-1.pdf}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{names}\NormalTok{(sp)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## [1] "S" "f" "t"
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{class}\NormalTok{(sp)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## [1] "specgram"
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{# Setup -------------------------------------------------------------------}
+
+\CommentTok{# STFT}
+\NormalTok{winsize  <-}\StringTok{ }\DecValTok{2048}
+\NormalTok{nfft     <-}\StringTok{ }\DecValTok{2048}
+\NormalTok{hopsize  <-}\StringTok{ }\DecValTok{512}
+\NormalTok{noverlap <-}\StringTok{ }\NormalTok{winsize }\OperatorTok{-}\StringTok{ }\NormalTok{hopsize}
+
+\CommentTok{# Frequency bands selection}
+\NormalTok{nb   <-}\StringTok{ }\DecValTok{2}\OperatorTok{^}\DecValTok{3}
+\NormalTok{lowB <-}\StringTok{ }\DecValTok{100}
+\NormalTok{eps  <-}\StringTok{ }\NormalTok{.Machine}\OperatorTok{$}\NormalTok{double.eps}
+
+\CommentTok{# Number of seconds of the analyzed window}
+\NormalTok{corrtime     <-}\StringTok{ }\DecValTok{15}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{# Analysis ----------------------------------------------------------------}
+
+\CommentTok{# Sampling rate}
+\CommentTok{# fs <- rate.AsspDataObj(x)}
+\CommentTok{# Short-time fourier transform}
+\CommentTok{# sp       <- specgram(x = x$audio, n = nfft, Fs = fs, window = winsize, overlap = noverlap)}
+\NormalTok{ntm      <-}\StringTok{ }\KeywordTok{ncol}\NormalTok{(sp}\OperatorTok{$}\NormalTok{S)  }\CommentTok{# number of (overlapping) time segments}
+
+\CommentTok{# Energy of bands}
+\NormalTok{fco    <-}\StringTok{ }\KeywordTok{round}\NormalTok{( }\KeywordTok{c}\NormalTok{(}\DecValTok{0}\NormalTok{, lowB}\OperatorTok{*}\NormalTok{(fs}\OperatorTok{/}\DecValTok{2}\OperatorTok{/}\NormalTok{lowB)}\OperatorTok{^}\NormalTok{((}\DecValTok{0}\OperatorTok{:}\NormalTok{(nb}\OperatorTok{-}\DecValTok{1}\NormalTok{))}\OperatorTok{/}\NormalTok{(nb}\OperatorTok{-}\DecValTok{1}\NormalTok{)))}\OperatorTok{/}\NormalTok{fs}\OperatorTok{*}\NormalTok{nfft )}
+\NormalTok{energy <-}\StringTok{ }\KeywordTok{matrix}\NormalTok{(}\DecValTok{0}\NormalTok{, nb, ntm)}
+\ControlFlowTok{for}\NormalTok{ (tm }\ControlFlowTok{in} \DecValTok{1}\OperatorTok{:}\NormalTok{ntm)\{}
+  \ControlFlowTok{for}\NormalTok{ (i }\ControlFlowTok{in} \DecValTok{1}\OperatorTok{:}\NormalTok{nb)\{}
+\NormalTok{    lower_bound <-}\StringTok{ }\DecValTok{1} \OperatorTok{+}\StringTok{ }\NormalTok{fco[i]}
+\NormalTok{    upper_bound <-}\StringTok{ }\KeywordTok{min}\NormalTok{( }\KeywordTok{c}\NormalTok{( }\DecValTok{1} \OperatorTok{+}\StringTok{ }\NormalTok{fco[i }\OperatorTok{+}\StringTok{ }\DecValTok{1}\NormalTok{], }\KeywordTok{nrow}\NormalTok{(sp}\OperatorTok{$}\NormalTok{S) ) )}
+\NormalTok{    energy[i, tm] <-}\StringTok{ }\KeywordTok{sum}\NormalTok{( }\KeywordTok{abs}\NormalTok{(sp}\OperatorTok{$}\NormalTok{S[ lower_bound}\OperatorTok{:}\NormalTok{upper_bound, tm ])}\OperatorTok{^}\DecValTok{2}\NormalTok{ )}
+\NormalTok{  \}}
+\NormalTok{\}}
+\NormalTok{energy[energy }\OperatorTok{<}\StringTok{ }\NormalTok{eps] <-}\StringTok{ }\NormalTok{eps}
+\NormalTok{energy =}\StringTok{ }\DecValTok{10}\OperatorTok{*}\KeywordTok{log10}\NormalTok{(energy)}
+
+\KeywordTok{dim}\NormalTok{(energy)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## [1]   8 642
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{# Init pdf-plot}
+\CommentTok{# pdf(file = paste(gsub(".wav","",nomefl),"-plot.pdf", sep = ""), height = 11, width = 8)}
+\KeywordTok{par}\NormalTok{(}\DataTypeTok{mfrow =} \KeywordTok{c}\NormalTok{(}\DecValTok{2}\NormalTok{,}\DecValTok{1}\NormalTok{))}
+
+\CommentTok{# Take a look}
+\KeywordTok{matplot}\NormalTok{(sp}\OperatorTok{$}\NormalTok{t, }\KeywordTok{t}\NormalTok{(energy), }\DataTypeTok{type =} \StringTok{"l"}\NormalTok{, }\DataTypeTok{lty =} \DecValTok{1}\NormalTok{, }
+        \DataTypeTok{main =} \StringTok{"Energy Band Envelopes"}\NormalTok{,}
+        \DataTypeTok{xlab =} \StringTok{"Time (secs)"}\NormalTok{, }\DataTypeTok{ylab =} \StringTok{"Energy"}\NormalTok{, }\DataTypeTok{xaxt =} \StringTok{"n"}\NormalTok{,}
+        \DataTypeTok{col =}\NormalTok{ viridis}\OperatorTok{::}\KeywordTok{viridis}\NormalTok{(nb}\OperatorTok{+}\DecValTok{1}\NormalTok{, .}\DecValTok{3}\NormalTok{), }\DataTypeTok{lwd =} \FloatTok{1.5}\NormalTok{)}
+\KeywordTok{axis}\NormalTok{(}\DecValTok{1}\NormalTok{, }\KeywordTok{seq}\NormalTok{(}\KeywordTok{min}\NormalTok{(sp}\OperatorTok{$}\NormalTok{t), }\KeywordTok{max}\NormalTok{(sp}\OperatorTok{$}\NormalTok{t), }\DataTypeTok{length.out =} \DecValTok{15}\NormalTok{),}
+     \KeywordTok{round}\NormalTok{(}\KeywordTok{seq}\NormalTok{(}\DecValTok{0}\NormalTok{,}\DecValTok{30}\NormalTok{,}\DataTypeTok{length.out =} \DecValTok{15}\NormalTok{)))}
+\KeywordTok{legend}\NormalTok{( }\StringTok{"bottom"}\NormalTok{, }\KeywordTok{paste}\NormalTok{(}\StringTok{"Band-"}\NormalTok{,}\DecValTok{1}\OperatorTok{:}\NormalTok{nb,}\DataTypeTok{sep=}\StringTok{""}\NormalTok{), }\DataTypeTok{lwd =} \DecValTok{8}\NormalTok{, }\DataTypeTok{col =}\NormalTok{  viridis}\OperatorTok{::}\KeywordTok{viridis}\NormalTok{(nb}\OperatorTok{+}\DecValTok{1}\NormalTok{, .}\DecValTok{3}\NormalTok{),}
+        \DataTypeTok{horiz =} \OtherTok{TRUE}\NormalTok{, }\DataTypeTok{bty =} \StringTok{"n"}\NormalTok{, }\DataTypeTok{cex =}\NormalTok{ .}\DecValTok{7}\NormalTok{ )}
+
+\CommentTok{# 6sec zoom}
+\KeywordTok{matplot}\NormalTok{(sp}\OperatorTok{$}\NormalTok{t, }\KeywordTok{t}\NormalTok{(energy), }\DataTypeTok{type =} \StringTok{"l"}\NormalTok{, }\DataTypeTok{lty =} \DecValTok{1}\NormalTok{, }
+        \DataTypeTok{main =} \StringTok{"Energy Band Envelopes / 6s-Zoom"}\NormalTok{,}
+        \DataTypeTok{xlab =} \StringTok{"Time (secs)"}\NormalTok{, }\DataTypeTok{ylab =} \StringTok{"Energy"}\NormalTok{, }\DataTypeTok{xaxt =} \StringTok{"n"}\NormalTok{, }\DataTypeTok{xlim =} \KeywordTok{c}\NormalTok{(}\DecValTok{0}\NormalTok{, }\FloatTok{6.5}\NormalTok{),}
+        \DataTypeTok{col =}\NormalTok{ viridis}\OperatorTok{::}\KeywordTok{viridis}\NormalTok{(nb}\OperatorTok{+}\DecValTok{1}\NormalTok{, .}\DecValTok{3}\NormalTok{), }\DataTypeTok{lwd =} \FloatTok{1.5}\NormalTok{)}
+\KeywordTok{axis}\NormalTok{(}\DecValTok{1}\NormalTok{, }\KeywordTok{seq}\NormalTok{(}\KeywordTok{min}\NormalTok{(sp}\OperatorTok{$}\NormalTok{t), }\KeywordTok{max}\NormalTok{(sp}\OperatorTok{$}\NormalTok{t), }\DataTypeTok{length.out =} \DecValTok{15}\NormalTok{), }
+     \KeywordTok{round}\NormalTok{(}\KeywordTok{seq}\NormalTok{(}\DecValTok{0}\NormalTok{,}\DecValTok{30}\NormalTok{,}\DataTypeTok{length.out =} \DecValTok{15}\NormalTok{)))}
+\KeywordTok{legend}\NormalTok{( }\StringTok{"bottom"}\NormalTok{, }\KeywordTok{paste}\NormalTok{(}\StringTok{"Band-"}\NormalTok{,}\DecValTok{1}\OperatorTok{:}\NormalTok{nb,}\DataTypeTok{sep=}\StringTok{""}\NormalTok{), }\DataTypeTok{lwd =} \DecValTok{8}\NormalTok{, }\DataTypeTok{col =}\NormalTok{  viridis}\OperatorTok{::}\KeywordTok{viridis}\NormalTok{(nb}\OperatorTok{+}\DecValTok{1}\NormalTok{, .}\DecValTok{3}\NormalTok{),}
+        \DataTypeTok{horiz =} \OtherTok{TRUE}\NormalTok{, }\DataTypeTok{bty =} \StringTok{"n"}\NormalTok{, }\DataTypeTok{cex =}\NormalTok{ .}\DecValTok{7}\NormalTok{ )}
+\end{Highlighting}
+\end{Shaded}
+
+\includegraphics{song_classification_g_20_files/figure-latex/unnamed-chunk-13-1.pdf}
+
+
+\end{document}

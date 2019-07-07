@@ -1,63 +1,133 @@
 ---
 title: "Statlearn - homework II"
-output: html_document
+output:
+  word_document: default
+  html_document: default
+  pdf_document: default
 ---
 
 # Part I -  Song genre classification 
 
+
+## Installing and importing libraries
+
 ```{r}
+
+# this part is to be executed only once to install libraries we need 
+# i kindly suggest you run this on windows OS
+# But if you feel like  solving R dependencies hell on linux... give it a try .
+# about macOS , don't really know
+# 
+# 
+# install.packages('signal')
+# install.packages('audio')
+# install.packages('wrassp')
+# install.packages('warbleR')
+# install.packages('tuneR')
+# install.packages('audiolyzR')
+
+
+```
+
+
+```{r}
+# then we import all libraries needed here
 suppressMessages(require(signal, quietly = T))
-library(help = signal)
+library(signal)
+
 suppressMessages(require(audio, quietly = T)) 
-library(help = audio)
+library(audio)
 
 suppressMessages(require(wrassp,  quietly = T))
 library(wrassp)
-#library(warbleR)
+
+
+library(warbleR)
 library(tuneR)
-library(help = tuneR)
-library(audiolyzR)s
+library(audiolyzR)
 
 ```
 
-## Data description 
+## Reading and describing Data
 ```{r}
 # My path to the data 
-auPath <- "hw_data"
+auPath <- "data_example"
+
 # List the .au files
 auFiles <- list.files(auPath, pattern=glob2rx('*.au'), full.names=TRUE)
+auFiles
 
 # Number of files 
-n_songs <- length(auFiles)
-n_songs
+N <- length(auFiles)
+N
+
+
 
 ```
 
-we have a total of 150 songs to work on .
+we have a total of {N} songs in our dataset .
+
+
+```{r}
+str(auFiles)
+#attributes(auFiles)
+## Let's try to get file in order 
+ord = c(1:N)
+ordFileList = paste0(rep(paste0(auPath,'/f')),paste0(ord,rep('.au',N)))
+str(ordFileList)
+```
 
 ```{r}
 
 # Load an audio file, e.g. the first one in the list above
-x <- read.AsspDataObj(auFiles)
+x <- read.AsspDataObj(ordFileList[1])
+str(attributes(x))
+ 
+#Then we set a fixed samples length for all files
+# as the minimum lenght of all of them 
+fixedLength = 22050 * 30 # default length
+
+
+for (i in 1:N) {
+  x <- read.AsspDataObj(auFiles[i])
+  min = attributes(x)$endRecord   # the samples length of the current file
+  fixedLength <- ifelse(fixedLength<=min, fixedLength, min) # we take the minimum
+}
+
+fixedLength
+
+
+
+
+```
+
+We can see from the output that The records were made at a sample rate of 22050hz 
+for a duration of 30 seconds and therefore  contains around 22050 * 30 = 661500 samples
+
+Now lets' plot rthe first file samples to geta general idea
+
+
+```{r}
+
+# We 
+# (only plot every 10th element to accelerate plotting)
+
+x = read.AsspDataObj(ordFileList[1])
 x
 
-# Take a look
-names(x)
-dim(x$audio)
-head(x$audio)   # actual sound wave
+ith = 22050 /5 # ith element to plot . basically we are plotting elements each 0.2s
 
-attributes(x)
-attributes(x)$sampleRate
+x_axe = seq(0,numRecs.AsspDataObj(x) - 1, ith) / rate.AsspDataObj(x)
+length(x_axe)
+y_axe =  x$audio[c(TRUE, rep(FALSE,ith-1))]
+length(y_axe)
 
-# Number of records
-numRecs.AsspDataObj(x)
 
-# and we can of course also plot these samples 
-# (only plot every 10th element to accelerate plotting)
-plot(seq(0,numRecs.AsspDataObj(x) - 1, 10) / rate.AsspDataObj(x), 
-     x$audio[c(TRUE, rep(FALSE,9))], 
-     type='l', 
-     xlab='time (s)', 
+
+plot(x_axe,
+     y_axe,
+     type='l',
+     xlab='time (s)',
      ylab='Audio samples')
 
 ```
@@ -65,12 +135,152 @@ plot(seq(0,numRecs.AsspDataObj(x) - 1, 10) / rate.AsspDataObj(x),
 
 
 ```{r}
-str(auFiles)
-#attributes(auFiles)
+suppressMessages(require(tuneR, quietly = T))
+?Wave
+?WaveMC
+?getWavPlayer
+?play
 
-## Let's try to get file in order 
-ord = c(1:150)
-ordFileList = paste0(rep('hw_data/',150),paste0(ord,rep('.au',150)))
+# Transform
+xwv <- Wave( as.numeric(x$audio[1:fixedLength]), samp.rate = rate.AsspDataObj(x), bit = 16)
+setWavPlayer("afplay") # needed for MAC OS not for Windoze
+# play(xwv) # do not run in Markdown
+plot(xwv)
+
+xw.dwn = downsample(xwv, samp.rate = 11025)
+xwv
+xw.dwn@samp.rate
+
+xw.dwn
+
+?attributes
+
+str(xwv)
 ```
 
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+```{r}
+
+?powspec
+out = powspec( as.numeric(x$audio[1:fixedLength]), sr = rate.AsspDataObj(x))
+# The output is a matrix, where each column represents a power spectrum 
+# for a given time frame and each row represents a frequency.
+dim(out)
+# 
+image(out)
+```
+```{r}
+
+# Spetral info ------------------------------------------------------------
+
+# calculate the fundamental frequency contour
+f0vals = ksvF0("data_example/f1.au", toFile=F)
+# plot the fundamental frequency contour
+plot(seq(0,numRecs.AsspDataObj(f0vals) - 1) / rate.AsspDataObj(f0vals) +
+       attr(f0vals, 'startTime'),
+     f0vals$F0, 
+     type='l', 
+     xlab='time (s)', 
+     ylab='F0 frequency (Hz)')
+
+
+
+```
+
+```{r}
+# STFT --------------------------------------------------------------------
+
+
+
+# Short Time Fourier Transform (default values)
+# fs       <- rate.AsspDataObj(x)   # sampling rate
+fs       <- xw.dwn@samp.rate
+winsize  <- 2048
+nfft     <- 2048
+hopsize  <- 512
+noverlap <- winsize - hopsize
+# sp  <- specgram(x = x$audio, n = nfft, Fs = fs, window = winsize, overlap = noverlap)
+sp  <- specgram(x = xw.dwn@left, n = nfft, Fs = fs, window = winsize, overlap = noverlap)
+sp
+names(sp)
+class(sp)
+
+
+```
+
+```{r}
+
+# Setup -------------------------------------------------------------------
+
+# STFT
+winsize  <- 2048
+nfft     <- 2048
+hopsize  <- 512
+noverlap <- winsize - hopsize
+
+# Frequency bands selection
+nb   <- 2^3
+lowB <- 100
+eps  <- .Machine$double.eps
+
+# Number of seconds of the analyzed window
+corrtime     <- 15
+
+
+```
+
+```{r}
+
+# Analysis ----------------------------------------------------------------
+
+# Sampling rate
+# fs <- rate.AsspDataObj(x)
+# Short-time fourier transform
+# sp       <- specgram(x = x$audio, n = nfft, Fs = fs, window = winsize, overlap = noverlap)
+ntm      <- ncol(sp$S)  # number of (overlapping) time segments
+
+# Energy of bands
+fco    <- round( c(0, lowB*(fs/2/lowB)^((0:(nb-1))/(nb-1)))/fs*nfft )
+energy <- matrix(0, nb, ntm)
+for (tm in 1:ntm){
+  for (i in 1:nb){
+    lower_bound <- 1 + fco[i]
+    upper_bound <- min( c( 1 + fco[i + 1], nrow(sp$S) ) )
+    energy[i, tm] <- sum( abs(sp$S[ lower_bound:upper_bound, tm ])^2 )
+  }
+}
+energy[energy < eps] <- eps
+energy = 10*log10(energy)
+
+dim(energy)
+
+```
+
+
+```{r}
+
+
+# Init pdf-plot
+# pdf(file = paste(gsub(".wav","",nomefl),"-plot.pdf", sep = ""), height = 11, width = 8)
+par(mfrow = c(2,1))
+
+# Take a look
+matplot(sp$t, t(energy), type = "l", lty = 1, 
+        main = "Energy Band Envelopes",
+        xlab = "Time (secs)", ylab = "Energy", xaxt = "n",
+        col = viridis::viridis(nb+1, .3), lwd = 1.5)
+axis(1, seq(min(sp$t), max(sp$t), length.out = 15),
+     round(seq(0,30,length.out = 15)))
+legend( "bottom", paste("Band-",1:nb,sep=""), lwd = 8, col =  viridis::viridis(nb+1, .3),
+        horiz = TRUE, bty = "n", cex = .7 )
+
+# 6sec zoom
+matplot(sp$t, t(energy), type = "l", lty = 1, 
+        main = "Energy Band Envelopes / 6s-Zoom",
+        xlab = "Time (secs)", ylab = "Energy", xaxt = "n", xlim = c(0, 6.5),
+        col = viridis::viridis(nb+1, .3), lwd = 1.5)
+axis(1, seq(min(sp$t), max(sp$t), length.out = 15), 
+     round(seq(0,30,length.out = 15)))
+legend( "bottom", paste("Band-",1:nb,sep=""), lwd = 8, col =  viridis::viridis(nb+1, .3),
+        horiz = TRUE, bty = "n", cex = .7 )
+```
+
