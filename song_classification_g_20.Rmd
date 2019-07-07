@@ -140,8 +140,11 @@ plot(x_axe,
 # reduceRate : wether reduce the sample rate or not 
 # newRate  # if down Sample is TRUE, new sample rate to use 
 transformToWave <- function(x, rate, bit = 16,reduceRate = FALSE, newRate = 11025 ){
-  xwv <- Wave( as.numeric(x), rate = rate, bit = bit)
-  transformedWave <- ifelse(reduceRate,  downsample(xwv, samp.rate = newRate),xwv)
+  xwv = Wave( as.numeric(x), samp.rate = rate, bit = bit)
+  if(reduceRate){
+    xwv = downsample(xwv, samp.rate = newRate)
+  }
+  #transformedWave <- ifelse(reduceRate,  downsample(xwv, samp.rate = newRate),xwv)
   return( xwv)
 }
 ```
@@ -171,7 +174,7 @@ powerSpectrum <- function(x , rate ){
 # name : name of the file input
 spectralInfo <- function(name){
    f0vals = ksvF0("data_example/f1.au", toFile=F)
-   return(fOvals)
+   return(f0vals)
 }
 
 
@@ -259,14 +262,22 @@ corrtime     <- 15
 
 # the file list to use is our Ordered file list 
 
+data = list()
+
 for( file in ordFileList){
   
   # we only take the fixed length sample  to make equal for all files 
-  x = read.AsspDataObj(file)[1:fixedLength]
+  x = read.AsspDataObj(file)$audio[1:fixedLength]
   xWave = transformToWave(x,rate)
   xPoweSpec = powerSpectrum(x,rate)
   xSpecgram = getSpecgram(x,fs = fs,winsize = winsize,winshape = winshape,overlap = overlap)
   xSpectralInfo = spectralInfo(file)
+  
+  
+  # we save all the values 
+  
+  #xData = data.frame(xWave,xPoweSpec,xSpecgram,xSpectralInfo)
+  #data <- c(data,xData)
   
 }
 
@@ -282,7 +293,7 @@ for( file in ordFileList){
 ### List of models to use and reasons (limit to models seen in class)
 ### Models Implementation
 ## classification
-### Evaluate classification performance for each model
+### Classification performance for each model
 ### Chose the best model 
 ### Determine each feature contribution to model
 ### Maintain only the most important ones
