@@ -52,6 +52,8 @@ library(audiolyzR)
 ```{r}
 # My path to the data 
 auPath <- "data_example"
+labelsFile <- paste0(auPath,'/labels.txt')
+labelsFile
 
 # List the .au files
 auFiles <- list.files(auPath, pattern=glob2rx('*.au'), full.names=TRUE)
@@ -59,9 +61,6 @@ auFiles
 
 # Number of files 
 N <- length(auFiles)
-N
-
-
 
 ```
 
@@ -69,12 +68,17 @@ we have a total of {N} songs in our dataset .
 
 
 ```{r}
-str(auFiles)
-#attributes(auFiles)
-## Let's try to get file in order 
+## Let's try to get the files in order 
 ord = c(1:N)
 ordFileList = paste0(rep(paste0(auPath,'/f')),paste0(ord,rep('.au',N)))
-str(ordFileList)
+ordFileList
+
+# let's get also labels for each files
+labels <- read.table(file=labelsFile, header=TRUE, sep=" ",col.names  = c('id','type'))
+ 
+labels
+?read.csv
+
 ```
 
 ```{r}
@@ -93,12 +97,6 @@ for (i in 1:N) {
   min = attributes(x)$endRecord   # the samples length of the current file
   fixedLength <- ifelse(fixedLength<=min, fixedLength, min) # we take the minimum
 }
-
-fixedLength
-
-
-
-
 ```
 
 We can see from the output that The records were made at a sample rate of 22050hz 
@@ -118,11 +116,8 @@ x
 ith = 22050 /5 # ith element to plot . basically we are plotting elements each 0.2s
 
 x_axe = seq(0,numRecs.AsspDataObj(x) - 1, ith) / rate.AsspDataObj(x)
-length(x_axe)
+
 y_axe =  x$audio[c(TRUE, rep(FALSE,ith-1))]
-length(y_axe)
-
-
 
 plot(x_axe,
      y_axe,
@@ -132,56 +127,52 @@ plot(x_axe,
 
 ```
 
-
+## Basic useful functions
 
 ```{r}
-suppressMessages(require(tuneR, quietly = T))
-?Wave
-?WaveMC
-?getWavPlayer
-?play
 
 # Transform
-xwv <- Wave( as.numeric(x$audio[1:fixedLength]), samp.rate = rate.AsspDataObj(x), bit = 16)
-setWavPlayer("afplay") # needed for MAC OS not for Windoze
-# play(xwv) # do not run in Markdown
-plot(xwv)
 
-xw.dwn = downsample(xwv, samp.rate = 11025)
-xwv
-xw.dwn@samp.rate
 
-xw.dwn
-
-?attributes
-
-str(xwv)
+# x : array to transform 
+# rate : the sample rate of x 
+# bit : 
+# reduceRate : wether reduce the sample rate or not 
+# newRate  # if down Sample is TRUE, new sample rate to use 
+transformToWave <- function(x, rate, bit = 16,reduceRate = FALSE, newRate = 11025 ){
+  xwv <- Wave( as.numeric(x), rate = rate, bit = bit)
+  transformedWave <- ifelse(reduceRate,  downsample(xwv, samp.rate = newRate),xwv)
+  return( xwv)
+}
 ```
 
 ```{r}
 
-?powspec
-out = powspec( as.numeric(x$audio[1:fixedLength]), sr = rate.AsspDataObj(x))
+# ?powspec
+
+# x : audio samples array 
+# rate : samples rate 
 # The output is a matrix, where each column represents a power spectrum 
 # for a given time frame and each row represents a frequency.
-dim(out)
-# 
-image(out)
+powerSpectrum <- function(x , rate ){
+  
+  out = powspec( as.numeric(x), rate)
+  return(out)
+
+}
 ```
+
+
 ```{r}
 
 # Spetral info ------------------------------------------------------------
 
 # calculate the fundamental frequency contour
-f0vals = ksvF0("data_example/f1.au", toFile=F)
-# plot the fundamental frequency contour
-plot(seq(0,numRecs.AsspDataObj(f0vals) - 1) / rate.AsspDataObj(f0vals) +
-       attr(f0vals, 'startTime'),
-     f0vals$F0, 
-     type='l', 
-     xlab='time (s)', 
-     ylab='F0 frequency (Hz)')
-
+# name : name of the file input
+spectralInfo <- function(name){
+   f0vals = ksvF0("data_example/f1.au", toFile=F)
+   return(fOvals)
+}
 
 
 ```
@@ -189,98 +180,114 @@ plot(seq(0,numRecs.AsspDataObj(f0vals) - 1) / rate.AsspDataObj(f0vals) +
 ```{r}
 # STFT --------------------------------------------------------------------
 
-
-
-# Short Time Fourier Transform (default values)
-# fs       <- rate.AsspDataObj(x)   # sampling rate
-fs       <- xw.dwn@samp.rate
-winsize  <- 2048
-nfft     <- 2048
-hopsize  <- 512
-noverlap <- winsize - hopsize
-# sp  <- specgram(x = x$audio, n = nfft, Fs = fs, window = winsize, overlap = noverlap)
-sp  <- specgram(x = xw.dwn@left, n = nfft, Fs = fs, window = winsize, overlap = noverlap)
-sp
-names(sp)
-class(sp)
+# get the spectogram of a wave 
+# x : wave array 
+# winsize : Fourier transform window size
+# fs : rate 
+# winshape : fourier transform window shape
+# overlap : overlap with previous window, defaults to half the window length.
+getSpecgram <- function (x, winsize, fs ,winshape ,overlap){
+  sp  <- specgram(x, n = winsize, Fs = fs, window = winsize, overlap = overlap)
+  return(sp)
+  
+}
 
 
 ```
 
 ```{r}
 
-# Setup -------------------------------------------------------------------
+# Energy bannds  ----------------------------------------------------------------
 
-# STFT
-winsize  <- 2048
-nfft     <- 2048
-hopsize  <- 512
-noverlap <- winsize - hopsize
-
-# Frequency bands selection
-nb   <- 2^3
-lowB <- 100
-eps  <- .Machine$double.eps
-
-# Number of seconds of the analyzed window
-corrtime     <- 15
+# x : audio spectogram
+# winsize : Fourier transform window size
+# fs : rate 
+# nb : number of bands to select
+# lowB :
+# eps : default minimum energy value 
 
 
-```
 
-```{r}
-
-# Analysis ----------------------------------------------------------------
-
-# Sampling rate
-# fs <- rate.AsspDataObj(x)
-# Short-time fourier transform
-# sp       <- specgram(x = x$audio, n = nfft, Fs = fs, window = winsize, overlap = noverlap)
-ntm      <- ncol(sp$S)  # number of (overlapping) time segments
-
-# Energy of bands
-fco    <- round( c(0, lowB*(fs/2/lowB)^((0:(nb-1))/(nb-1)))/fs*nfft )
+energyBands <- function(x,fs,nb, lowB,eps,winsize){
+ntm      <- ncol(x$S)  # number of (overlapping) time segments
+fco    <- round( c(0, lowB*(fs/2/lowB)^((0:(nb-1))/(nb-1)))/fs*winsize )
 energy <- matrix(0, nb, ntm)
 for (tm in 1:ntm){
   for (i in 1:nb){
     lower_bound <- 1 + fco[i]
-    upper_bound <- min( c( 1 + fco[i + 1], nrow(sp$S) ) )
-    energy[i, tm] <- sum( abs(sp$S[ lower_bound:upper_bound, tm ])^2 )
+    upper_bound <- min( c( 1 + fco[i + 1], nrow(x$S) ) )
+    energy[i, tm] <- sum( abs(x$S[ lower_bound:upper_bound, tm ])^2 )
   }
 }
 energy[energy < eps] <- eps
 energy = 10*log10(energy)
 
-dim(energy)
+return(energy)
+  
+  
+}
+
 
 ```
 
+## Creating the dataset 
+
+We basically loop on on audio files, and compute some features using functions defined above .
 
 ```{r}
 
 
-# Init pdf-plot
-# pdf(file = paste(gsub(".wav","",nomefl),"-plot.pdf", sep = ""), height = 11, width = 8)
-par(mfrow = c(2,1))
+# first we define the general parameters
 
-# Take a look
-matplot(sp$t, t(energy), type = "l", lty = 1, 
-        main = "Energy Band Envelopes",
-        xlab = "Time (secs)", ylab = "Energy", xaxt = "n",
-        col = viridis::viridis(nb+1, .3), lwd = 1.5)
-axis(1, seq(min(sp$t), max(sp$t), length.out = 15),
-     round(seq(0,30,length.out = 15)))
-legend( "bottom", paste("Band-",1:nb,sep=""), lwd = 8, col =  viridis::viridis(nb+1, .3),
-        horiz = TRUE, bty = "n", cex = .7 )
+rate = 22050
+newrate = 11050
+reduceRate = FALSE
 
-# 6sec zoom
-matplot(sp$t, t(energy), type = "l", lty = 1, 
-        main = "Energy Band Envelopes / 6s-Zoom",
-        xlab = "Time (secs)", ylab = "Energy", xaxt = "n", xlim = c(0, 6.5),
-        col = viridis::viridis(nb+1, .3), lwd = 1.5)
-axis(1, seq(min(sp$t), max(sp$t), length.out = 15), 
-     round(seq(0,30,length.out = 15)))
-legend( "bottom", paste("Band-",1:nb,sep=""), lwd = 8, col =  viridis::viridis(nb+1, .3),
-        horiz = TRUE, bty = "n", cex = .7 )
+
+# STFT
+winsize  <- 2048
+nfft     <- 2048
+hopsize  <- 512
+overlap <- winsize - hopsize
+
+# Frequency bands selection
+nb   <- 2^3
+lowB <- 100
+eps  <- .Machine$double.eps
+# Number of seconds of the analyzed window
+corrtime     <- 15
+
+# the file list to use is our Ordered file list 
+
+for( file in ordFileList){
+  
+  # we only take the fixed length sample  to make equal for all files 
+  x = read.AsspDataObj(file)[1:fixedLength]
+  xWave = transformToWave(x,rate)
+  xPoweSpec = powerSpectrum(x,rate)
+  xSpecgram = getSpecgram(x,fs = fs,winsize = winsize,winshape = winshape,overlap = overlap)
+  xSpectralInfo = spectralInfo(file)
+  
+}
+
+
 ```
 
+
+
+
+
+## Features Extractions 
+## Models to apply 
+### List of models to use and reasons (limit to models seen in class)
+### Models Implementation
+## classification
+### Evaluate classification performance for each model
+### Chose the best model 
+### Determine each feature contribution to model
+### Maintain only the most important ones
+### Final classification
+## Map
+
+
+# Part II -  Theory
