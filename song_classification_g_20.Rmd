@@ -2,8 +2,8 @@
 title: "Statlearn - homework II"
 output:
   word_document: default
-  html_document: default
   pdf_document: default
+  html_document: default
 ---
 
 # Part I -  Song genre classification 
@@ -127,7 +127,60 @@ plot(x_axe,
 
 ```
 
-## Basic useful functions
+## Features Extractions 
+
+### Features to extract
+
+#### Zero crossing rate 
+
+The zero-crossing rate is the rate of sign-changes along a signal, i.e., the rate at which the signal changes from positive to zero to negative or from negative to zero to positive.[1] This feature has been used heavily in both speech recognition and music information retrieval, being a key feature to classify percussive sounds.[2]
+
+ZCR is defined formally as
+
+
+
+{\displaystyle zcr={\frac {1}{T-1}}\sum _{t=1}^{T-1}\mathbb {1} _{\mathbb {R} _{<0}}(s_{t}s_{t-1})} {\displaystyle zcr={\frac {1}{T-1}}\sum _{t=1}^{T-1}\mathbb {1} _{\mathbb {R} _{<0}}(s_{t}s_{t-1})}
+where {\displaystyle s} s is a signal of length {\displaystyle T} T and {\displaystyle \mathbb {1} _{\mathbb {R} _{<0}}} {\displaystyle \mathbb {1} _{\mathbb {R} _{<0}}} 
+
+is an indicator function.
+
+
+####  Spectral properties
+
+the spectral prperties are a set of statistics computed on the spectrum of an audio signal, sucha as 
+- Spectral Centroid ( most important one)
+- Spectral mean or median 
+- spectral quartiles
+
+The spectral centroid is a measure used in digital signal processing to characterise a spectrum. It indicates where the center of mass of the spectrum is located. Perceptually, it has a robust connection with the impression of brightness of a sound.
+We basically loop on on audio files, and compute some features using functions defined above .
+
+It is calculated as the weighted mean of the frequencies present in the signal, determined using a Fourier transform, with their magnitudes as the weights
+
+
+#### Spectral roll Off
+
+The roll-off frequency is defined as the frequency under which some percentage (cutoff) of the total energy of the spectrum is contained. The roll-off frequency can be used to distinguish between harmonic (below roll-off) and noisy sounds (above roll-off).
+
+
+#### Mel Frequency Cepstral Coefficients
+ Mel Frequency Cepstral Coefficients (MFCC) for an object of class Wave. In speech recognition MFCCs are used to extract the stimulus of the vocal tract from speech
+ 
+ 
+#### Chroma frequencies
+
+Chroma features are an interesting and powerful representation for music audio in which the entire spectrum is projected onto 12 bins representing the 12 distinct semitones (or chroma) of the musical octave. Since, in music, notes exactly one octave apart are perceived as particularly similar, knowing the distribution of chroma even without the absolute frequency (i.e. the original octave) can give useful musical information about the audio -- and may even reveal perceived musical similarity that is not apparent in the original spectra.
+
+
+
+### Implementation with R
+
+In R we used principally package 
+ - Seawave
+ - SoundGen
+ - TuneR
+ 
+#### Convert audio data to wave 
 
 ```{r}
 
@@ -149,26 +202,23 @@ transformToWave <- function(x, rate, bit = 16,reduceRate = FALSE, newRate = 1102
 }
 ```
 
+#### Spectrum analysis , power spectrum and energy band 
 ```{r}
 
-# ?powspec
+# Compute the powerspectrum of the input signal
 
 # x : audio samples array 
 # rate : samples rate 
 # The output is a matrix, where each column represents a power spectrum 
 # for a given time frame and each row represents a frequency.
 powerSpectrum <- function(x , rate ){
-  
   out = powspec( as.numeric(x), rate)
   return(out)
 
 }
-```
 
 
-```{r}
-
-# Spetral info ------------------------------------------------------------
+# Spectral info ------------------------------------------------------------
 
 # calculate the fundamental frequency contour
 # name : name of the file input
@@ -178,29 +228,91 @@ spectralInfo <- function(name){
 }
 
 
-```
 
-```{r}
-# STFT --------------------------------------------------------------------
+# --------------------------------------------------------------------
 
-# get the spectogram of a wave 
+# Get the spectogram of a wave 
 # x : wave array 
 # winsize : Fourier transform window size
 # fs : rate 
-# winshape : fourier transform window shape
 # overlap : overlap with previous window, defaults to half the window length.
-getSpecgram <- function (x, winsize, fs ,winshape ,overlap){
-  sp  <- specgram(x, n = winsize, Fs = fs, window = winsize, overlap = overlap)
+getSpecgram <- function (x, winsize, fs ,overlap){
+  sp  <- specgram(x, n = winsize, Fs = fs,  overlap = overlap)
   return(sp)
   
 }
 
+#---------------------------------------------------------------------
 
-```
+#Frequency spectrum of a time wave
 
-```{r}
+# x	: an R object.
 
-# Energy bannds  ----------------------------------------------------------------
+# fs :	sampling frequency of wave (in Hz). Does not need to be specified if embedded in wave.
+
+# wl	: if at is not null, length of the window for the analysis (by default = 512).
+
+# wn	 : window name, see ftwindow (by default "hanning").
+
+# fftw : if TRUE calls the function FFT of the library fftw for faster computation. See Notes of the function spectro.
+
+# norm	#if TRUE the spectrum is normalised by its maximum.
+
+getSpec <- function (x, winsize, fs ){
+  sp  <- spec(x,  fs = fs, wl = winsize, fftw = TRUE,norm  =TRUE)
+  return(sp)
+}
+
+#-----------------------------------------------------------------------------------
+# To get spectral properties 
+
+# spec	: a data set resulting of a spectral analysis obtained with spec or meanspec (not in dB).
+
+# f	 :sampling frequency of spec (in Hz).
+
+# str	:logical, if TRUE returns the results in a structured table.
+
+# flim	:a vector of length 2 to specifgy the frequency limits of the analysis (in kHz)
+
+# mel	#a logical, if TRUE the (htk-)mel scale is used.
+
+GetSpecProps <- function(x, fs){
+  specProps = specprop(x, f= fs, mel = TRUE)
+  return(specProps)
+}
+
+#---------------------------------------------------------------
+
+# compute the zero crossing rate
+
+# x :  R wave object 	
+
+
+#f :sampling frequency of wave (in Hz). Does not need to be specified if embedded in wave.
+
+#wl: length of the window for the analysis (even number of points, by default = 512). If NULL the zero-crossing rate is computed of the complete signal.
+
+#overlap	: overlap between two successive analysis windows (in %) if wl is not NULL.
+  zeroCrossingRate <- function (x , fs, wl , overlap ){
+    
+    cr = zcr(x,f= fs, wl = wl, ovlp = overlap)
+    return(zcr)
+    
+  }
+
+# Computation of MFCCs (Mel Frequency Cepstral Coefficients) for a Wave object
+
+# x :  Object of class Wave.
+
+getMfccs <- function(x){
+  mfccs = MFCC(x, a = 0.1, HW.width = 0.025, HW.overlapping = 0.25, 
+    T.number = 24, T.overlapping = 0.5, K = 12)
+  
+  return(mfcccs)
+}
+
+
+# Energy bands  ----------------------------------------------------------------
 
 # x : audio spectogram
 # winsize : Fourier transform window size
@@ -231,12 +343,12 @@ return(energy)
 }
 
 
-```
+``` 
 
-## Creating the dataset 
 
-We basically loop on on audio files, and compute some features using functions defined above .
+### Dataset Creation 
 
+Basically we loop over the audio file, extracting all features and saving in in text file 
 ```{r}
 
 
@@ -270,7 +382,7 @@ for( file in ordFileList){
   x = read.AsspDataObj(file)$audio[1:fixedLength]
   xWave = transformToWave(x,rate)
   xPoweSpec = powerSpectrum(x,rate)
-  xSpecgram = getSpecgram(x,fs = fs,winsize = winsize,winshape = winshape,overlap = overlap)
+  xSpecgram = getSpecgram(x,fs = rate,winsize = winsize,overlap = overlap)
   xSpectralInfo = spectralInfo(file)
   
   
@@ -288,7 +400,10 @@ for( file in ordFileList){
 
 
 
-## Features Extractions 
+
+
+
+
 ## Models to apply 
 ### List of models to use and reasons (limit to models seen in class)
 ### Models Implementation

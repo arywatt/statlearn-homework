@@ -246,7 +246,17 @@ Data}\label{reading-and-describing-data}
 \begin{Highlighting}[]
 \CommentTok{# My path to the data }
 \NormalTok{auPath <-}\StringTok{ "data_example"}
+\NormalTok{labelsFile <-}\StringTok{ }\KeywordTok{paste0}\NormalTok{(auPath,}\StringTok{'/labels.txt'}\NormalTok{)}
+\NormalTok{labelsFile}
+\end{Highlighting}
+\end{Shaded}
 
+\begin{verbatim}
+## [1] "data_example/labels.txt"
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
 \CommentTok{# List the .au files}
 \NormalTok{auFiles <-}\StringTok{ }\KeywordTok{list.files}\NormalTok{(auPath, }\DataTypeTok{pattern=}\KeywordTok{glob2rx}\NormalTok{(}\StringTok{'*.au'}\NormalTok{), }\DataTypeTok{full.names=}\OtherTok{TRUE}\NormalTok{)}
 \NormalTok{auFiles}
@@ -261,38 +271,62 @@ Data}\label{reading-and-describing-data}
 \begin{Highlighting}[]
 \CommentTok{# Number of files }
 \NormalTok{N <-}\StringTok{ }\KeywordTok{length}\NormalTok{(auFiles)}
-\NormalTok{N}
 \end{Highlighting}
 \end{Shaded}
-
-\begin{verbatim}
-## [1] 2
-\end{verbatim}
 
 we have a total of \{N\} songs in our dataset .
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\KeywordTok{str}\NormalTok{(auFiles)}
+\NormalTok{## Let's try to get the files in order }
+\NormalTok{ord =}\StringTok{ }\KeywordTok{c}\NormalTok{(}\DecValTok{1}\OperatorTok{:}\NormalTok{N)}
+\NormalTok{ordFileList =}\StringTok{ }\KeywordTok{paste0}\NormalTok{(}\KeywordTok{rep}\NormalTok{(}\KeywordTok{paste0}\NormalTok{(auPath,}\StringTok{'/f'}\NormalTok{)),}\KeywordTok{paste0}\NormalTok{(ord,}\KeywordTok{rep}\NormalTok{(}\StringTok{'.au'}\NormalTok{,N)))}
+\NormalTok{ordFileList}
 \end{Highlighting}
 \end{Shaded}
 
 \begin{verbatim}
-##  chr [1:2] "data_example/f1.au" "data_example/f2.au"
+## [1] "data_example/f1.au" "data_example/f2.au"
 \end{verbatim}
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{#attributes(auFiles)}
-\NormalTok{## Let's try to get file in order }
-\NormalTok{ord =}\StringTok{ }\KeywordTok{c}\NormalTok{(}\DecValTok{1}\OperatorTok{:}\NormalTok{N)}
-\NormalTok{ordFileList =}\StringTok{ }\KeywordTok{paste0}\NormalTok{(}\KeywordTok{rep}\NormalTok{(}\KeywordTok{paste0}\NormalTok{(auPath,}\StringTok{'/f'}\NormalTok{)),}\KeywordTok{paste0}\NormalTok{(ord,}\KeywordTok{rep}\NormalTok{(}\StringTok{'.au'}\NormalTok{,N)))}
-\KeywordTok{str}\NormalTok{(ordFileList)}
+\CommentTok{# let's get also labels for each files}
+\NormalTok{labels <-}\StringTok{ }\KeywordTok{read.table}\NormalTok{(}\DataTypeTok{file=}\NormalTok{labelsFile, }\DataTypeTok{header=}\OtherTok{TRUE}\NormalTok{, }\DataTypeTok{sep=}\StringTok{" "}\NormalTok{,}\DataTypeTok{col.names  =} \KeywordTok{c}\NormalTok{(}\StringTok{'id'}\NormalTok{,}\StringTok{'type'}\NormalTok{))}
 \end{Highlighting}
 \end{Shaded}
 
 \begin{verbatim}
-##  chr [1:2] "data_example/f1.au" "data_example/f2.au"
+## Warning in read.table(file = labelsFile, header = TRUE, sep = " ",
+## col.names = c("id", : incomplete final line found by readTableHeader on
+## 'data_example/labels.txt'
+\end{verbatim}
+
+\begin{verbatim}
+## Warning in read.table(file = labelsFile, header = TRUE, sep = " ",
+## col.names = c("id", : header and 'col.names' are of different lengths
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{labels}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+##   id    type
+## 1  1 country
+## 2  2 country
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{?read.csv}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## starting httpd help server ... done
 \end{verbatim}
 
 \begin{Shaded}
@@ -329,14 +363,8 @@ we have a total of \{N\} songs in our dataset .
 \NormalTok{  min =}\StringTok{ }\KeywordTok{attributes}\NormalTok{(x)}\OperatorTok{$}\NormalTok{endRecord   }\CommentTok{# the samples length of the current file}
 \NormalTok{  fixedLength <-}\StringTok{ }\KeywordTok{ifelse}\NormalTok{(fixedLength}\OperatorTok{<=}\NormalTok{min, fixedLength, min) }\CommentTok{# we take the minimum}
 \NormalTok{\}}
-
-\NormalTok{fixedLength}
 \end{Highlighting}
 \end{Shaded}
-
-\begin{verbatim}
-## [1] 661500
-\end{verbatim}
 
 We can see from the output that The records were made at a sample rate
 of 22050hz for a duration of 30 seconds and therefore contains around
@@ -368,27 +396,9 @@ Now lets' plot rthe first file samples to geta general idea
 \NormalTok{ith =}\StringTok{ }\DecValTok{22050} \OperatorTok{/}\DecValTok{5} \CommentTok{# ith element to plot . basically we are plotting elements each 0.2s}
 
 \NormalTok{x_axe =}\StringTok{ }\KeywordTok{seq}\NormalTok{(}\DecValTok{0}\NormalTok{,}\KeywordTok{numRecs.AsspDataObj}\NormalTok{(x) }\OperatorTok{-}\StringTok{ }\DecValTok{1}\NormalTok{, ith) }\OperatorTok{/}\StringTok{ }\KeywordTok{rate.AsspDataObj}\NormalTok{(x)}
-\KeywordTok{length}\NormalTok{(x_axe)}
-\end{Highlighting}
-\end{Shaded}
 
-\begin{verbatim}
-## [1] 152
-\end{verbatim}
-
-\begin{Shaded}
-\begin{Highlighting}[]
 \NormalTok{y_axe =}\StringTok{  }\NormalTok{x}\OperatorTok{$}\NormalTok{audio[}\KeywordTok{c}\NormalTok{(}\OtherTok{TRUE}\NormalTok{, }\KeywordTok{rep}\NormalTok{(}\OtherTok{FALSE}\NormalTok{,ith}\OperatorTok{-}\DecValTok{1}\NormalTok{))]}
-\KeywordTok{length}\NormalTok{(y_axe)}
-\end{Highlighting}
-\end{Shaded}
 
-\begin{verbatim}
-## [1] 152
-\end{verbatim}
-
-\begin{Shaded}
-\begin{Highlighting}[]
 \KeywordTok{plot}\NormalTok{(x_axe,}
 \NormalTok{     y_axe,}
      \DataTypeTok{type=}\StringTok{'l'}\NormalTok{,}
@@ -399,258 +409,318 @@ Now lets' plot rthe first file samples to geta general idea
 
 \includegraphics{song_classification_g_20_files/figure-latex/unnamed-chunk-6-1.pdf}
 
+\subsection{Features Extractions}\label{features-extractions}
+
+\subsubsection{Features to extract}\label{features-to-extract}
+
+\paragraph{Zero crossing rate}\label{zero-crossing-rate}
+
+The zero-crossing rate is the rate of sign-changes along a signal, i.e.,
+the rate at which the signal changes from positive to zero to negative
+or from negative to zero to positive.{[}1{]} This feature has been used
+heavily in both speech recognition and music information retrieval,
+being a key feature to classify percussive sounds.{[}2{]}
+
+ZCR is defined formally as
+
+\{\displaystyle zcr=\{\frac {1}{T-1}\}\sum \emph{\{t=1\}\^{}\{T-1\}\mathbb {1}
+}\{\mathbb {R} \emph{\{\textless{}0\}\}(s}\{t\}s\_\{t-1\})\}
+\{\displaystyle zcr=\{\frac {1}{T-1}\}\sum \emph{\{t=1\}\^{}\{T-1\}\mathbb {1}
+}\{\mathbb {R} \emph{\{\textless{}0\}\}(s}\{t\}s\_\{t-1\})\} where
+\{\displaystyle s\} s is a signal of length \{\displaystyle T\} T and
+\{\displaystyle \mathbb {1} \emph{\{\mathbb {R} }\{\textless{}0\}\}\}
+\{\displaystyle \mathbb {1} \emph{\{\mathbb {R} }\{\textless{}0\}\}\}
+
+is an indicator function.
+
+\paragraph{Spectral properties}\label{spectral-properties}
+
+the spectral prperties are a set of statistics computed on the spectrum
+of an audio signal, sucha as - Spectral Centroid ( most important one) -
+Spectral mean or median - spectral quartiles
+
+The spectral centroid is a measure used in digital signal processing to
+characterise a spectrum. It indicates where the center of mass of the
+spectrum is located. Perceptually, it has a robust connection with the
+impression of brightness of a sound. We basically loop on on audio
+files, and compute some features using functions defined above .
+
+It is calculated as the weighted mean of the frequencies present in the
+signal, determined using a Fourier transform, with their magnitudes as
+the weights
+
+\paragraph{Spectral roll Off}\label{spectral-roll-off}
+
+The roll-off frequency is defined as the frequency under which some
+percentage (cutoff) of the total energy of the spectrum is contained.
+The roll-off frequency can be used to distinguish between harmonic
+(below roll-off) and noisy sounds (above roll-off).
+
+\paragraph{Mel Frequency Cepstral
+Coefficients}\label{mel-frequency-cepstral-coefficients}
+
+Mel Frequency Cepstral Coefficients (MFCC) for an object of class Wave.
+In speech recognition MFCCs are used to extract the stimulus of the
+vocal tract from speech
+
+\paragraph{Chroma frequencies}\label{chroma-frequencies}
+
+Chroma features are an interesting and powerful representation for music
+audio in which the entire spectrum is projected onto 12 bins
+representing the 12 distinct semitones (or chroma) of the musical
+octave. Since, in music, notes exactly one octave apart are perceived as
+particularly similar, knowing the distribution of chroma even without
+the absolute frequency (i.e.~the original octave) can give useful
+musical information about the audio -- and may even reveal perceived
+musical similarity that is not apparent in the original spectra.
+
+\subsubsection{Implementation with R}\label{implementation-with-r}
+
+In R we used principally package - Seawave - SoundGen - TuneR
+
+\paragraph{Convert audio data to wave}\label{convert-audio-data-to-wave}
+
 \begin{Shaded}
 \begin{Highlighting}[]
-\KeywordTok{suppressMessages}\NormalTok{(}\KeywordTok{require}\NormalTok{(tuneR, }\DataTypeTok{quietly =}\NormalTok{ T))}
-\NormalTok{?Wave}
-\end{Highlighting}
-\end{Shaded}
-
-\begin{verbatim}
-## starting httpd help server ... done
-\end{verbatim}
-
-\begin{Shaded}
-\begin{Highlighting}[]
-\NormalTok{?WaveMC}
-\NormalTok{?getWavPlayer}
-\NormalTok{?play}
-
 \CommentTok{# Transform}
-\NormalTok{xwv <-}\StringTok{ }\KeywordTok{Wave}\NormalTok{( }\KeywordTok{as.numeric}\NormalTok{(x}\OperatorTok{$}\NormalTok{audio[}\DecValTok{1}\OperatorTok{:}\NormalTok{fixedLength]), }\DataTypeTok{samp.rate =} \KeywordTok{rate.AsspDataObj}\NormalTok{(x), }\DataTypeTok{bit =} \DecValTok{16}\NormalTok{)}
-\KeywordTok{setWavPlayer}\NormalTok{(}\StringTok{"afplay"}\NormalTok{) }\CommentTok{# needed for MAC OS not for Windoze}
-\CommentTok{# play(xwv) # do not run in Markdown}
-\KeywordTok{plot}\NormalTok{(xwv)}
+
+
+\CommentTok{# x : array to transform }
+\CommentTok{# rate : the sample rate of x }
+\CommentTok{# bit : }
+\CommentTok{# reduceRate : wether reduce the sample rate or not }
+\CommentTok{# newRate  # if down Sample is TRUE, new sample rate to use }
+\NormalTok{transformToWave <-}\StringTok{ }\ControlFlowTok{function}\NormalTok{(x, rate, }\DataTypeTok{bit =} \DecValTok{16}\NormalTok{,}\DataTypeTok{reduceRate =} \OtherTok{FALSE}\NormalTok{, }\DataTypeTok{newRate =} \DecValTok{11025}\NormalTok{ )\{}
+\NormalTok{  xwv =}\StringTok{ }\KeywordTok{Wave}\NormalTok{( }\KeywordTok{as.numeric}\NormalTok{(x), }\DataTypeTok{samp.rate =}\NormalTok{ rate, }\DataTypeTok{bit =}\NormalTok{ bit)}
+  \ControlFlowTok{if}\NormalTok{(reduceRate)\{}
+\NormalTok{    xwv =}\StringTok{ }\KeywordTok{downsample}\NormalTok{(xwv, }\DataTypeTok{samp.rate =}\NormalTok{ newRate)}
+\NormalTok{  \}}
+  \CommentTok{#transformedWave <- ifelse(reduceRate,  downsample(xwv, samp.rate = newRate),xwv)}
+  \KeywordTok{return}\NormalTok{( xwv)}
+\NormalTok{\}}
 \end{Highlighting}
 \end{Shaded}
 
-\includegraphics{song_classification_g_20_files/figure-latex/unnamed-chunk-7-1.pdf}
+\paragraph{Spectrum analysis , power spectrum and energy
+band}\label{spectrum-analysis-power-spectrum-and-energy-band}
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\NormalTok{xw.dwn =}\StringTok{ }\KeywordTok{downsample}\NormalTok{(xwv, }\DataTypeTok{samp.rate =} \DecValTok{11025}\NormalTok{)}
-\NormalTok{xwv}
-\end{Highlighting}
-\end{Shaded}
+\CommentTok{# Compute the powerspectrum of the input signal}
 
-\begin{verbatim}
-## 
-## Wave Object
-##  Number of Samples:      661500
-##  Duration (seconds):     30
-##  Samplingrate (Hertz):   22050
-##  Channels (Mono/Stereo): Mono
-##  PCM (integer format):   TRUE
-##  Bit (8/16/24/32/64):    16
-\end{verbatim}
-
-\begin{Shaded}
-\begin{Highlighting}[]
-\NormalTok{xw.dwn}\OperatorTok{@}\NormalTok{samp.rate}
-\end{Highlighting}
-\end{Shaded}
-
-\begin{verbatim}
-## [1] 11025
-\end{verbatim}
-
-\begin{Shaded}
-\begin{Highlighting}[]
-\NormalTok{xw.dwn}
-\end{Highlighting}
-\end{Shaded}
-
-\begin{verbatim}
-## 
-## Wave Object
-##  Number of Samples:      330750
-##  Duration (seconds):     30
-##  Samplingrate (Hertz):   11025
-##  Channels (Mono/Stereo): Mono
-##  PCM (integer format):   TRUE
-##  Bit (8/16/24/32/64):    16
-\end{verbatim}
-
-\begin{Shaded}
-\begin{Highlighting}[]
-\NormalTok{?attributes}
-
-\KeywordTok{str}\NormalTok{(xwv)}
-\end{Highlighting}
-\end{Shaded}
-
-\begin{verbatim}
-## Formal class 'Wave' [package "tuneR"] with 6 slots
-##   ..@ left     : num [1:661500] -13260 -10389 -8663 -8034 -8125 ...
-##   ..@ right    : num(0) 
-##   ..@ stereo   : logi FALSE
-##   ..@ samp.rate: num 22050
-##   ..@ bit      : num 16
-##   ..@ pcm      : logi TRUE
-\end{verbatim}
-
-\begin{Shaded}
-\begin{Highlighting}[]
-\NormalTok{?powspec}
-\NormalTok{out =}\StringTok{ }\KeywordTok{powspec}\NormalTok{( }\KeywordTok{as.numeric}\NormalTok{(x}\OperatorTok{$}\NormalTok{audio[}\DecValTok{1}\OperatorTok{:}\NormalTok{fixedLength]), }\DataTypeTok{sr =} \KeywordTok{rate.AsspDataObj}\NormalTok{(x))}
+\CommentTok{# x : audio samples array }
+\CommentTok{# rate : samples rate }
 \CommentTok{# The output is a matrix, where each column represents a power spectrum }
 \CommentTok{# for a given time frame and each row represents a frequency.}
-\KeywordTok{dim}\NormalTok{(out)}
-\end{Highlighting}
-\end{Shaded}
+\NormalTok{powerSpectrum <-}\StringTok{ }\ControlFlowTok{function}\NormalTok{(x , rate )\{}
+\NormalTok{  out =}\StringTok{ }\KeywordTok{powspec}\NormalTok{( }\KeywordTok{as.numeric}\NormalTok{(x), rate)}
+  \KeywordTok{return}\NormalTok{(out)}
 
-\begin{verbatim}
-## [1]  512 3005
-\end{verbatim}
+\NormalTok{\}}
 
-\begin{Shaded}
-\begin{Highlighting}[]
-\CommentTok{# }
-\KeywordTok{image}\NormalTok{(out)}
-\end{Highlighting}
-\end{Shaded}
 
-\includegraphics{song_classification_g_20_files/figure-latex/unnamed-chunk-8-1.pdf}
-
-\begin{Shaded}
-\begin{Highlighting}[]
-\CommentTok{# Spetral info ------------------------------------------------------------}
+\CommentTok{# Spectral info ------------------------------------------------------------}
 
 \CommentTok{# calculate the fundamental frequency contour}
-\NormalTok{f0vals =}\StringTok{ }\KeywordTok{ksvF0}\NormalTok{(}\StringTok{"data_example/f1.au"}\NormalTok{, }\DataTypeTok{toFile=}\NormalTok{F)}
-\CommentTok{# plot the fundamental frequency contour}
-\KeywordTok{plot}\NormalTok{(}\KeywordTok{seq}\NormalTok{(}\DecValTok{0}\NormalTok{,}\KeywordTok{numRecs.AsspDataObj}\NormalTok{(f0vals) }\OperatorTok{-}\StringTok{ }\DecValTok{1}\NormalTok{) }\OperatorTok{/}\StringTok{ }\KeywordTok{rate.AsspDataObj}\NormalTok{(f0vals) }\OperatorTok{+}
-\StringTok{       }\KeywordTok{attr}\NormalTok{(f0vals, }\StringTok{'startTime'}\NormalTok{),}
-\NormalTok{     f0vals}\OperatorTok{$}\NormalTok{F0, }
-     \DataTypeTok{type=}\StringTok{'l'}\NormalTok{, }
-     \DataTypeTok{xlab=}\StringTok{'time (s)'}\NormalTok{, }
-     \DataTypeTok{ylab=}\StringTok{'F0 frequency (Hz)'}\NormalTok{)}
-\end{Highlighting}
-\end{Shaded}
-
-\includegraphics{song_classification_g_20_files/figure-latex/unnamed-chunk-9-1.pdf}
-
-\begin{Shaded}
-\begin{Highlighting}[]
-\CommentTok{# STFT --------------------------------------------------------------------}
+\CommentTok{# name : name of the file input}
+\NormalTok{spectralInfo <-}\StringTok{ }\ControlFlowTok{function}\NormalTok{(name)\{}
+\NormalTok{   f0vals =}\StringTok{ }\KeywordTok{ksvF0}\NormalTok{(}\StringTok{"data_example/f1.au"}\NormalTok{, }\DataTypeTok{toFile=}\NormalTok{F)}
+   \KeywordTok{return}\NormalTok{(f0vals)}
+\NormalTok{\}}
 
 
 
-\CommentTok{# Short Time Fourier Transform (default values)}
-\CommentTok{# fs       <- rate.AsspDataObj(x)   # sampling rate}
-\NormalTok{fs       <-}\StringTok{ }\NormalTok{xw.dwn}\OperatorTok{@}\NormalTok{samp.rate}
-\NormalTok{winsize  <-}\StringTok{ }\DecValTok{2048}
-\NormalTok{nfft     <-}\StringTok{ }\DecValTok{2048}
-\NormalTok{hopsize  <-}\StringTok{ }\DecValTok{512}
-\NormalTok{noverlap <-}\StringTok{ }\NormalTok{winsize }\OperatorTok{-}\StringTok{ }\NormalTok{hopsize}
-\CommentTok{# sp  <- specgram(x = x$audio, n = nfft, Fs = fs, window = winsize, overlap = noverlap)}
-\NormalTok{sp  <-}\StringTok{ }\KeywordTok{specgram}\NormalTok{(}\DataTypeTok{x =}\NormalTok{ xw.dwn}\OperatorTok{@}\NormalTok{left, }\DataTypeTok{n =}\NormalTok{ nfft, }\DataTypeTok{Fs =}\NormalTok{ fs, }\DataTypeTok{window =}\NormalTok{ winsize, }\DataTypeTok{overlap =}\NormalTok{ noverlap)}
-\NormalTok{sp}
-\end{Highlighting}
-\end{Shaded}
+\CommentTok{# --------------------------------------------------------------------}
 
-\includegraphics{song_classification_g_20_files/figure-latex/unnamed-chunk-10-1.pdf}
+\CommentTok{# Get the spectogram of a wave }
+\CommentTok{# x : wave array }
+\CommentTok{# winsize : Fourier transform window size}
+\CommentTok{# fs : rate }
+\CommentTok{# overlap : overlap with previous window, defaults to half the window length.}
+\NormalTok{getSpecgram <-}\StringTok{ }\ControlFlowTok{function}\NormalTok{ (x, winsize, fs ,overlap)\{}
+\NormalTok{  sp  <-}\StringTok{ }\KeywordTok{specgram}\NormalTok{(x, }\DataTypeTok{n =}\NormalTok{ winsize, }\DataTypeTok{Fs =}\NormalTok{ fs,  }\DataTypeTok{overlap =}\NormalTok{ overlap)}
+  \KeywordTok{return}\NormalTok{(sp)}
+  
+\NormalTok{\}}
 
-\begin{Shaded}
-\begin{Highlighting}[]
-\KeywordTok{names}\NormalTok{(sp)}
-\end{Highlighting}
-\end{Shaded}
+\CommentTok{#---------------------------------------------------------------------}
 
-\begin{verbatim}
-## [1] "S" "f" "t"
-\end{verbatim}
+\CommentTok{#Frequency spectrum of a time wave}
 
-\begin{Shaded}
-\begin{Highlighting}[]
-\KeywordTok{class}\NormalTok{(sp)}
-\end{Highlighting}
-\end{Shaded}
+\CommentTok{# x : an R object.}
 
-\begin{verbatim}
-## [1] "specgram"
-\end{verbatim}
+\CommentTok{# fs :  sampling frequency of wave (in Hz). Does not need to be specified if embedded in wave.}
 
-\begin{Shaded}
-\begin{Highlighting}[]
-\CommentTok{# Setup -------------------------------------------------------------------}
+\CommentTok{# wl    : if at is not null, length of the window for the analysis (by default = 512).}
 
-\CommentTok{# STFT}
-\NormalTok{winsize  <-}\StringTok{ }\DecValTok{2048}
-\NormalTok{nfft     <-}\StringTok{ }\DecValTok{2048}
-\NormalTok{hopsize  <-}\StringTok{ }\DecValTok{512}
-\NormalTok{noverlap <-}\StringTok{ }\NormalTok{winsize }\OperatorTok{-}\StringTok{ }\NormalTok{hopsize}
+\CommentTok{# wn     : window name, see ftwindow (by default "hanning").}
 
-\CommentTok{# Frequency bands selection}
-\NormalTok{nb   <-}\StringTok{ }\DecValTok{2}\OperatorTok{^}\DecValTok{3}
-\NormalTok{lowB <-}\StringTok{ }\DecValTok{100}
-\NormalTok{eps  <-}\StringTok{ }\NormalTok{.Machine}\OperatorTok{$}\NormalTok{double.eps}
+\CommentTok{# fftw : if TRUE calls the function FFT of the library fftw for faster computation. See Notes of the function spectro.}
 
-\CommentTok{# Number of seconds of the analyzed window}
-\NormalTok{corrtime     <-}\StringTok{ }\DecValTok{15}
-\end{Highlighting}
-\end{Shaded}
+\CommentTok{# norm  #if TRUE the spectrum is normalised by its maximum.}
 
-\begin{Shaded}
-\begin{Highlighting}[]
-\CommentTok{# Analysis ----------------------------------------------------------------}
+\NormalTok{getSpec <-}\StringTok{ }\ControlFlowTok{function}\NormalTok{ (x, winsize, fs )\{}
+\NormalTok{  sp  <-}\StringTok{ }\KeywordTok{spec}\NormalTok{(x,  }\DataTypeTok{fs =}\NormalTok{ fs, }\DataTypeTok{wl =}\NormalTok{ winsize, }\DataTypeTok{fftw =} \OtherTok{TRUE}\NormalTok{,}\DataTypeTok{norm  =}\OtherTok{TRUE}\NormalTok{)}
+  \KeywordTok{return}\NormalTok{(sp)}
+\NormalTok{\}}
 
-\CommentTok{# Sampling rate}
-\CommentTok{# fs <- rate.AsspDataObj(x)}
-\CommentTok{# Short-time fourier transform}
-\CommentTok{# sp       <- specgram(x = x$audio, n = nfft, Fs = fs, window = winsize, overlap = noverlap)}
-\NormalTok{ntm      <-}\StringTok{ }\KeywordTok{ncol}\NormalTok{(sp}\OperatorTok{$}\NormalTok{S)  }\CommentTok{# number of (overlapping) time segments}
+\CommentTok{#-----------------------------------------------------------------------------------}
+\CommentTok{# To get spectral properties }
 
-\CommentTok{# Energy of bands}
-\NormalTok{fco    <-}\StringTok{ }\KeywordTok{round}\NormalTok{( }\KeywordTok{c}\NormalTok{(}\DecValTok{0}\NormalTok{, lowB}\OperatorTok{*}\NormalTok{(fs}\OperatorTok{/}\DecValTok{2}\OperatorTok{/}\NormalTok{lowB)}\OperatorTok{^}\NormalTok{((}\DecValTok{0}\OperatorTok{:}\NormalTok{(nb}\OperatorTok{-}\DecValTok{1}\NormalTok{))}\OperatorTok{/}\NormalTok{(nb}\OperatorTok{-}\DecValTok{1}\NormalTok{)))}\OperatorTok{/}\NormalTok{fs}\OperatorTok{*}\NormalTok{nfft )}
+\CommentTok{# spec  : a data set resulting of a spectral analysis obtained with spec or meanspec (not in dB).}
+
+\CommentTok{# f  :sampling frequency of spec (in Hz).}
+
+\CommentTok{# str   :logical, if TRUE returns the results in a structured table.}
+
+\CommentTok{# flim  :a vector of length 2 to specifgy the frequency limits of the analysis (in kHz)}
+
+\CommentTok{# mel   #a logical, if TRUE the (htk-)mel scale is used.}
+
+\NormalTok{GetSpecProps <-}\StringTok{ }\ControlFlowTok{function}\NormalTok{(x, fs)\{}
+\NormalTok{  specProps =}\StringTok{ }\KeywordTok{specprop}\NormalTok{(x, }\DataTypeTok{f=}\NormalTok{ fs, }\DataTypeTok{mel =} \OtherTok{TRUE}\NormalTok{)}
+  \KeywordTok{return}\NormalTok{(specProps)}
+\NormalTok{\}}
+
+\CommentTok{#---------------------------------------------------------------}
+
+\CommentTok{# compute the zero crossing rate}
+
+\CommentTok{# x :  R wave object    }
+
+
+\CommentTok{#f :sampling frequency of wave (in Hz). Does not need to be specified if embedded in wave.}
+
+\CommentTok{#wl: length of the window for the analysis (even number of points, by default = 512). If NULL the zero-crossing rate is computed of the complete signal.}
+
+\CommentTok{#overlap    : overlap between two successive analysis windows (in %) if wl is not NULL.}
+\NormalTok{  zeroCrossingRate <-}\StringTok{ }\ControlFlowTok{function}\NormalTok{ (x , fs, wl , overlap )\{}
+    
+\NormalTok{    cr =}\StringTok{ }\KeywordTok{zcr}\NormalTok{(x,}\DataTypeTok{f=}\NormalTok{ fs, }\DataTypeTok{wl =}\NormalTok{ wl, }\DataTypeTok{ovlp =}\NormalTok{ overlap)}
+    \KeywordTok{return}\NormalTok{(zcr)}
+    
+\NormalTok{  \}}
+
+\CommentTok{# Computation of MFCCs (Mel Frequency Cepstral Coefficients) for a Wave object}
+
+\CommentTok{# x :  Object of class Wave.}
+
+\NormalTok{getMfccs <-}\StringTok{ }\ControlFlowTok{function}\NormalTok{(x)\{}
+\NormalTok{  mfccs =}\StringTok{ }\KeywordTok{MFCC}\NormalTok{(x, }\DataTypeTok{a =} \FloatTok{0.1}\NormalTok{, }\DataTypeTok{HW.width =} \FloatTok{0.025}\NormalTok{, }\DataTypeTok{HW.overlapping =} \FloatTok{0.25}\NormalTok{, }
+    \DataTypeTok{T.number =} \DecValTok{24}\NormalTok{, }\DataTypeTok{T.overlapping =} \FloatTok{0.5}\NormalTok{, }\DataTypeTok{K =} \DecValTok{12}\NormalTok{)}
+  
+  \KeywordTok{return}\NormalTok{(mfcccs)}
+\NormalTok{\}}
+
+
+\CommentTok{# Energy bands  ----------------------------------------------------------------}
+
+\CommentTok{# x : audio spectogram}
+\CommentTok{# winsize : Fourier transform window size}
+\CommentTok{# fs : rate }
+\CommentTok{# nb : number of bands to select}
+\CommentTok{# lowB :}
+\CommentTok{# eps : default minimum energy value }
+
+
+
+\NormalTok{energyBands <-}\StringTok{ }\ControlFlowTok{function}\NormalTok{(x,fs,nb, lowB,eps,winsize)\{}
+\NormalTok{ntm      <-}\StringTok{ }\KeywordTok{ncol}\NormalTok{(x}\OperatorTok{$}\NormalTok{S)  }\CommentTok{# number of (overlapping) time segments}
+\NormalTok{fco    <-}\StringTok{ }\KeywordTok{round}\NormalTok{( }\KeywordTok{c}\NormalTok{(}\DecValTok{0}\NormalTok{, lowB}\OperatorTok{*}\NormalTok{(fs}\OperatorTok{/}\DecValTok{2}\OperatorTok{/}\NormalTok{lowB)}\OperatorTok{^}\NormalTok{((}\DecValTok{0}\OperatorTok{:}\NormalTok{(nb}\OperatorTok{-}\DecValTok{1}\NormalTok{))}\OperatorTok{/}\NormalTok{(nb}\OperatorTok{-}\DecValTok{1}\NormalTok{)))}\OperatorTok{/}\NormalTok{fs}\OperatorTok{*}\NormalTok{winsize )}
 \NormalTok{energy <-}\StringTok{ }\KeywordTok{matrix}\NormalTok{(}\DecValTok{0}\NormalTok{, nb, ntm)}
 \ControlFlowTok{for}\NormalTok{ (tm }\ControlFlowTok{in} \DecValTok{1}\OperatorTok{:}\NormalTok{ntm)\{}
   \ControlFlowTok{for}\NormalTok{ (i }\ControlFlowTok{in} \DecValTok{1}\OperatorTok{:}\NormalTok{nb)\{}
 \NormalTok{    lower_bound <-}\StringTok{ }\DecValTok{1} \OperatorTok{+}\StringTok{ }\NormalTok{fco[i]}
-\NormalTok{    upper_bound <-}\StringTok{ }\KeywordTok{min}\NormalTok{( }\KeywordTok{c}\NormalTok{( }\DecValTok{1} \OperatorTok{+}\StringTok{ }\NormalTok{fco[i }\OperatorTok{+}\StringTok{ }\DecValTok{1}\NormalTok{], }\KeywordTok{nrow}\NormalTok{(sp}\OperatorTok{$}\NormalTok{S) ) )}
-\NormalTok{    energy[i, tm] <-}\StringTok{ }\KeywordTok{sum}\NormalTok{( }\KeywordTok{abs}\NormalTok{(sp}\OperatorTok{$}\NormalTok{S[ lower_bound}\OperatorTok{:}\NormalTok{upper_bound, tm ])}\OperatorTok{^}\DecValTok{2}\NormalTok{ )}
+\NormalTok{    upper_bound <-}\StringTok{ }\KeywordTok{min}\NormalTok{( }\KeywordTok{c}\NormalTok{( }\DecValTok{1} \OperatorTok{+}\StringTok{ }\NormalTok{fco[i }\OperatorTok{+}\StringTok{ }\DecValTok{1}\NormalTok{], }\KeywordTok{nrow}\NormalTok{(x}\OperatorTok{$}\NormalTok{S) ) )}
+\NormalTok{    energy[i, tm] <-}\StringTok{ }\KeywordTok{sum}\NormalTok{( }\KeywordTok{abs}\NormalTok{(x}\OperatorTok{$}\NormalTok{S[ lower_bound}\OperatorTok{:}\NormalTok{upper_bound, tm ])}\OperatorTok{^}\DecValTok{2}\NormalTok{ )}
 \NormalTok{  \}}
 \NormalTok{\}}
 \NormalTok{energy[energy }\OperatorTok{<}\StringTok{ }\NormalTok{eps] <-}\StringTok{ }\NormalTok{eps}
 \NormalTok{energy =}\StringTok{ }\DecValTok{10}\OperatorTok{*}\KeywordTok{log10}\NormalTok{(energy)}
 
-\KeywordTok{dim}\NormalTok{(energy)}
+\KeywordTok{return}\NormalTok{(energy)}
+  
+  
+\NormalTok{\}}
 \end{Highlighting}
 \end{Shaded}
 
-\begin{verbatim}
-## [1]   8 642
-\end{verbatim}
+\subsubsection{Dataset Creation}\label{dataset-creation}
+
+Basically we loop over the audio file, extracting all features and
+saving in in text file
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{# Init pdf-plot}
-\CommentTok{# pdf(file = paste(gsub(".wav","",nomefl),"-plot.pdf", sep = ""), height = 11, width = 8)}
-\KeywordTok{par}\NormalTok{(}\DataTypeTok{mfrow =} \KeywordTok{c}\NormalTok{(}\DecValTok{2}\NormalTok{,}\DecValTok{1}\NormalTok{))}
+\CommentTok{# first we define the general parameters}
 
-\CommentTok{# Take a look}
-\KeywordTok{matplot}\NormalTok{(sp}\OperatorTok{$}\NormalTok{t, }\KeywordTok{t}\NormalTok{(energy), }\DataTypeTok{type =} \StringTok{"l"}\NormalTok{, }\DataTypeTok{lty =} \DecValTok{1}\NormalTok{, }
-        \DataTypeTok{main =} \StringTok{"Energy Band Envelopes"}\NormalTok{,}
-        \DataTypeTok{xlab =} \StringTok{"Time (secs)"}\NormalTok{, }\DataTypeTok{ylab =} \StringTok{"Energy"}\NormalTok{, }\DataTypeTok{xaxt =} \StringTok{"n"}\NormalTok{,}
-        \DataTypeTok{col =}\NormalTok{ viridis}\OperatorTok{::}\KeywordTok{viridis}\NormalTok{(nb}\OperatorTok{+}\DecValTok{1}\NormalTok{, .}\DecValTok{3}\NormalTok{), }\DataTypeTok{lwd =} \FloatTok{1.5}\NormalTok{)}
-\KeywordTok{axis}\NormalTok{(}\DecValTok{1}\NormalTok{, }\KeywordTok{seq}\NormalTok{(}\KeywordTok{min}\NormalTok{(sp}\OperatorTok{$}\NormalTok{t), }\KeywordTok{max}\NormalTok{(sp}\OperatorTok{$}\NormalTok{t), }\DataTypeTok{length.out =} \DecValTok{15}\NormalTok{),}
-     \KeywordTok{round}\NormalTok{(}\KeywordTok{seq}\NormalTok{(}\DecValTok{0}\NormalTok{,}\DecValTok{30}\NormalTok{,}\DataTypeTok{length.out =} \DecValTok{15}\NormalTok{)))}
-\KeywordTok{legend}\NormalTok{( }\StringTok{"bottom"}\NormalTok{, }\KeywordTok{paste}\NormalTok{(}\StringTok{"Band-"}\NormalTok{,}\DecValTok{1}\OperatorTok{:}\NormalTok{nb,}\DataTypeTok{sep=}\StringTok{""}\NormalTok{), }\DataTypeTok{lwd =} \DecValTok{8}\NormalTok{, }\DataTypeTok{col =}\NormalTok{  viridis}\OperatorTok{::}\KeywordTok{viridis}\NormalTok{(nb}\OperatorTok{+}\DecValTok{1}\NormalTok{, .}\DecValTok{3}\NormalTok{),}
-        \DataTypeTok{horiz =} \OtherTok{TRUE}\NormalTok{, }\DataTypeTok{bty =} \StringTok{"n"}\NormalTok{, }\DataTypeTok{cex =}\NormalTok{ .}\DecValTok{7}\NormalTok{ )}
+\NormalTok{rate =}\StringTok{ }\DecValTok{22050}
+\NormalTok{newrate =}\StringTok{ }\DecValTok{11050}
+\NormalTok{reduceRate =}\StringTok{ }\OtherTok{FALSE}
 
-\CommentTok{# 6sec zoom}
-\KeywordTok{matplot}\NormalTok{(sp}\OperatorTok{$}\NormalTok{t, }\KeywordTok{t}\NormalTok{(energy), }\DataTypeTok{type =} \StringTok{"l"}\NormalTok{, }\DataTypeTok{lty =} \DecValTok{1}\NormalTok{, }
-        \DataTypeTok{main =} \StringTok{"Energy Band Envelopes / 6s-Zoom"}\NormalTok{,}
-        \DataTypeTok{xlab =} \StringTok{"Time (secs)"}\NormalTok{, }\DataTypeTok{ylab =} \StringTok{"Energy"}\NormalTok{, }\DataTypeTok{xaxt =} \StringTok{"n"}\NormalTok{, }\DataTypeTok{xlim =} \KeywordTok{c}\NormalTok{(}\DecValTok{0}\NormalTok{, }\FloatTok{6.5}\NormalTok{),}
-        \DataTypeTok{col =}\NormalTok{ viridis}\OperatorTok{::}\KeywordTok{viridis}\NormalTok{(nb}\OperatorTok{+}\DecValTok{1}\NormalTok{, .}\DecValTok{3}\NormalTok{), }\DataTypeTok{lwd =} \FloatTok{1.5}\NormalTok{)}
-\KeywordTok{axis}\NormalTok{(}\DecValTok{1}\NormalTok{, }\KeywordTok{seq}\NormalTok{(}\KeywordTok{min}\NormalTok{(sp}\OperatorTok{$}\NormalTok{t), }\KeywordTok{max}\NormalTok{(sp}\OperatorTok{$}\NormalTok{t), }\DataTypeTok{length.out =} \DecValTok{15}\NormalTok{), }
-     \KeywordTok{round}\NormalTok{(}\KeywordTok{seq}\NormalTok{(}\DecValTok{0}\NormalTok{,}\DecValTok{30}\NormalTok{,}\DataTypeTok{length.out =} \DecValTok{15}\NormalTok{)))}
-\KeywordTok{legend}\NormalTok{( }\StringTok{"bottom"}\NormalTok{, }\KeywordTok{paste}\NormalTok{(}\StringTok{"Band-"}\NormalTok{,}\DecValTok{1}\OperatorTok{:}\NormalTok{nb,}\DataTypeTok{sep=}\StringTok{""}\NormalTok{), }\DataTypeTok{lwd =} \DecValTok{8}\NormalTok{, }\DataTypeTok{col =}\NormalTok{  viridis}\OperatorTok{::}\KeywordTok{viridis}\NormalTok{(nb}\OperatorTok{+}\DecValTok{1}\NormalTok{, .}\DecValTok{3}\NormalTok{),}
-        \DataTypeTok{horiz =} \OtherTok{TRUE}\NormalTok{, }\DataTypeTok{bty =} \StringTok{"n"}\NormalTok{, }\DataTypeTok{cex =}\NormalTok{ .}\DecValTok{7}\NormalTok{ )}
+
+\CommentTok{# STFT}
+\NormalTok{winsize  <-}\StringTok{ }\DecValTok{2048}
+\NormalTok{nfft     <-}\StringTok{ }\DecValTok{2048}
+\NormalTok{hopsize  <-}\StringTok{ }\DecValTok{512}
+\NormalTok{overlap <-}\StringTok{ }\NormalTok{winsize }\OperatorTok{-}\StringTok{ }\NormalTok{hopsize}
+
+\CommentTok{# Frequency bands selection}
+\NormalTok{nb   <-}\StringTok{ }\DecValTok{2}\OperatorTok{^}\DecValTok{3}
+\NormalTok{lowB <-}\StringTok{ }\DecValTok{100}
+\NormalTok{eps  <-}\StringTok{ }\NormalTok{.Machine}\OperatorTok{$}\NormalTok{double.eps}
+\CommentTok{# Number of seconds of the analyzed window}
+\NormalTok{corrtime     <-}\StringTok{ }\DecValTok{15}
+
+\CommentTok{# the file list to use is our Ordered file list }
+
+\NormalTok{data =}\StringTok{ }\KeywordTok{list}\NormalTok{()}
+
+\ControlFlowTok{for}\NormalTok{( file }\ControlFlowTok{in}\NormalTok{ ordFileList)\{}
+  
+  \CommentTok{# we only take the fixed length sample  to make equal for all files }
+\NormalTok{  x =}\StringTok{ }\KeywordTok{read.AsspDataObj}\NormalTok{(file)}\OperatorTok{$}\NormalTok{audio[}\DecValTok{1}\OperatorTok{:}\NormalTok{fixedLength]}
+\NormalTok{  xWave =}\StringTok{ }\KeywordTok{transformToWave}\NormalTok{(x,rate)}
+\NormalTok{  xPoweSpec =}\StringTok{ }\KeywordTok{powerSpectrum}\NormalTok{(x,rate)}
+\NormalTok{  xSpecgram =}\StringTok{ }\KeywordTok{getSpecgram}\NormalTok{(x,}\DataTypeTok{fs =}\NormalTok{ rate,}\DataTypeTok{winsize =}\NormalTok{ winsize,}\DataTypeTok{overlap =}\NormalTok{ overlap)}
+\NormalTok{  xSpectralInfo =}\StringTok{ }\KeywordTok{spectralInfo}\NormalTok{(file)}
+  
+  
+  \CommentTok{# we save all the values }
+  
+  \CommentTok{#xData = data.frame(xWave,xPoweSpec,xSpecgram,xSpectralInfo)}
+  \CommentTok{#data <- c(data,xData)}
+  
+\NormalTok{\}}
 \end{Highlighting}
 \end{Shaded}
 
-\includegraphics{song_classification_g_20_files/figure-latex/unnamed-chunk-13-1.pdf}
+\subsection{Models to apply}\label{models-to-apply}
+
+\subsubsection{List of models to use and reasons (limit to models seen
+in
+class)}\label{list-of-models-to-use-and-reasons-limit-to-models-seen-in-class}
+
+\subsubsection{Models Implementation}\label{models-implementation}
+
+\subsection{classification}\label{classification}
+
+\subsubsection{Classification performance for each
+model}\label{classification-performance-for-each-model}
+
+\subsubsection{Chose the best model}\label{chose-the-best-model}
+
+\subsubsection{Determine each feature contribution to
+model}\label{determine-each-feature-contribution-to-model}
+
+\subsubsection{Maintain only the most important
+ones}\label{maintain-only-the-most-important-ones}
+
+\subsubsection{Final classification}\label{final-classification}
+
+\subsection{Map}\label{map}
+
+\section{Part II - Theory}\label{part-ii---theory}
 
 
 \end{document}
