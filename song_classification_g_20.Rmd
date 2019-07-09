@@ -133,8 +133,7 @@ plot(x_axe,
 
 #### Zero crossing rate 
 
-The zero-crossing rate is the rate of sign-changes along a signal, i.e., the rate at which the signal changes from positive to zero to negative or from negative to zero to positive.[1] This feature has been used heavily in both speech recognition and music information retrieval, being a key feature to classify percussive sounds.[2]
-
+The zero-crossing rate is the rate of sign-changes along a signal, i.e., the rate at which the signal changes from positive to zero to negative or from negative to zero to positive.[1] This feature has been used heavily in both speech recognition and music information retrieval, being a key feature to classify percussive sounds.
 ZCR is defined formally as
 
 
@@ -237,7 +236,7 @@ spectralInfo <- function(name){
 # fs : rate 
 # overlap : overlap with previous window, defaults to half the window length.
 getSpecgram <- function (x, winsize, fs ,overlap){
-  sp  <- specgram(x, n = winsize, Fs = fs,  overlap = overlap)
+  sp  <- specgram(as.numeric(x), n = winsize, Fs = fs,  overlap = overlap)
   return(sp)
   
 }
@@ -246,7 +245,7 @@ getSpecgram <- function (x, winsize, fs ,overlap){
 
 #Frequency spectrum of a time wave
 
-# x	: an R object.
+# x	: an R wave object.
 
 # fs :	sampling frequency of wave (in Hz). Does not need to be specified if embedded in wave.
 
@@ -276,8 +275,8 @@ getSpec <- function (x, winsize, fs ){
 
 # mel	#a logical, if TRUE the (htk-)mel scale is used.
 
-GetSpecProps <- function(x, fs){
-  specProps = specprop(x, f= fs, mel = TRUE)
+GetSpecProps <- function(spec, fs){
+  specProps = specprop(spec, f= fs, mel = TRUE)
   return(specProps)
 }
 
@@ -294,9 +293,9 @@ GetSpecProps <- function(x, fs){
 
 #overlap	: overlap between two successive analysis windows (in %) if wl is not NULL.
   zeroCrossingRate <- function (x , fs, wl , overlap ){
-    
-    cr = zcr(x,f= fs, wl = wl, ovlp = overlap)
-    return(zcr)
+    cr = zcr(x,f= fs, wl = wl, ovlp = overlap,plot=FALSE)
+    str(cr)
+    return(cr)
     
   }
 
@@ -304,11 +303,9 @@ GetSpecProps <- function(x, fs){
 
 # x :  Object of class Wave.
 
-getMfccs <- function(x){
-  mfccs = MFCC(x, a = 0.1, HW.width = 0.025, HW.overlapping = 0.25, 
-    T.number = 24, T.overlapping = 0.5, K = 12)
-  
-  return(mfcccs)
+getMfccs <- function(x, fs){
+  mfccs = melfcc(x, sr=fs)
+  return(mfccs)
 }
 
 
@@ -380,11 +377,32 @@ for( file in ordFileList){
   
   # we only take the fixed length sample  to make equal for all files 
   x = read.AsspDataObj(file)$audio[1:fixedLength]
-  xWave = transformToWave(x,rate)
-  xPoweSpec = powerSpectrum(x,rate)
-  xSpecgram = getSpecgram(x,fs = rate,winsize = winsize,overlap = overlap)
-  xSpectralInfo = spectralInfo(file)
+  xwave = transformToWave(x,rate)
+  str(xwave)
   
+  
+  xPoweSpec = powerSpectrum(x,rate)
+  str(xPoweSpec)
+  
+  
+  xSpecgram = getSpecgram(x,fs = rate,winsize = winsize,overlap = overlap)
+  str(xSpecgram)
+  
+  
+  xSpectralInfo = spectralInfo(file)
+  str(xSpectralInfo)
+  
+ 
+  
+  spec = getSpec(xWave,winsize = winsize , rate)
+  specprops = GetSpecProps(spec,rate)
+  str(specprops)
+  
+   cr = zeroCrossingRate(xwave,rate,wl=NULL,overlap = noverlap)
+   print(sum(cr))
+  
+   mfccs = getMfccs(xwave,rate)
+   str(mfccs)
   
   # we save all the values 
   
