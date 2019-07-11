@@ -27,10 +27,12 @@ output:
 # install.packages('audiolyzR')
 
 
+
+
 ```
 
 
-```{r}
+```{r ,include=FALSE}
 # then we import all libraries needed here
 suppressMessages(require(signal, quietly = T))
 library(signal)
@@ -45,6 +47,12 @@ library(wrassp)
 library(warbleR)
 library(tuneR)
 library(audiolyzR)
+library(reticulate)
+use_python("C:/Users/watt/Anaconda3/python.exe", required = T)
+
+knitr::opts_chunk$set(engine.path = list(
+  python = "C:/Users/watt/Anaconda3/python.exe"
+))
 
 ```
 
@@ -134,14 +142,6 @@ plot(x_axe,
 #### Zero crossing rate 
 
 The zero-crossing rate is the rate of sign-changes along a signal, i.e., the rate at which the signal changes from positive to zero to negative or from negative to zero to positive.[1] This feature has been used heavily in both speech recognition and music information retrieval, being a key feature to classify percussive sounds.
-ZCR is defined formally as
-
-
-
-{\displaystyle zcr={\frac {1}{T-1}}\sum _{t=1}^{T-1}\mathbb {1} _{\mathbb {R} _{<0}}(s_{t}s_{t-1})} {\displaystyle zcr={\frac {1}{T-1}}\sum _{t=1}^{T-1}\mathbb {1} _{\mathbb {R} _{<0}}(s_{t}s_{t-1})}
-where {\displaystyle s} s is a signal of length {\displaystyle T} T and {\displaystyle \mathbb {1} _{\mathbb {R} _{<0}}} {\displaystyle \mathbb {1} _{\mathbb {R} _{<0}}} 
-
-is an indicator function.
 
 
 ####  Spectral properties
@@ -170,6 +170,11 @@ The roll-off frequency is defined as the frequency under which some percentage (
 
 Chroma features are an interesting and powerful representation for music audio in which the entire spectrum is projected onto 12 bins representing the 12 distinct semitones (or chroma) of the musical octave. Since, in music, notes exactly one octave apart are perceived as particularly similar, knowing the distribution of chroma even without the absolute frequency (i.e. the original octave) can give useful musical information about the audio -- and may even reveal perceived musical similarity that is not apparent in the original spectra.
 
+
+####  Pitch 
+#### Tmbral features
+####  Flux
+#### Rhythm features:
 
 
 ### Implementation with R
@@ -202,7 +207,7 @@ transformToWave <- function(x, rate, bit = 16,reduceRate = FALSE, newRate = 1102
 ```
 
 #### Spectrum analysis , power spectrum and energy band 
-```{r}
+```{r, include=FALSE}
 
 # Compute the powerspectrum of the input signal
 
@@ -258,7 +263,7 @@ getSpecgram <- function (x, winsize, fs ,overlap){
 # norm	#if TRUE the spectrum is normalised by its maximum.
 
 getSpec <- function (x, winsize, fs ){
-  sp  <- spec(x,  fs = fs, wl = winsize, fftw = TRUE,norm  =TRUE)
+  sp  <- meanspec(x,  fs = fs, wl = winsize, fftw = FALSE,norm  =TRUE)
   return(sp)
 }
 
@@ -304,7 +309,13 @@ GetSpecProps <- function(spec, fs){
 # x :  Object of class Wave.
 
 getMfccs <- function(x, fs){
-  mfccs = melfcc(x, sr=fs)
+  mfccs = melfcc(x, 
+                 sr=fs,
+                 sumpower = FALSE,
+                 #♣numcep = 5,
+                 wintime = 2,
+                 #spec_out = FALSE
+                 )
   return(mfccs)
 }
 
@@ -343,6 +354,8 @@ return(energy)
 ``` 
 
 
+
+
 ### Dataset Creation 
 
 Basically we loop over the audio file, extracting all features and saving in in text file 
@@ -369,53 +382,109 @@ eps  <- .Machine$double.eps
 # Number of seconds of the analyzed window
 corrtime     <- 15
 
+
+
+
+
+```
+
+
+```{r}
+
 # the file list to use is our Ordered file list 
+featurelist = list()
+features_names = c()
 
-data = list()
-
-for( file in ordFileList){
+for( j in 1:N){
+ 
+  print(j)
+  file = ordFileList[j]
+  
+  features = c()
+  features_names = c()
+  
   
   # we only take the fixed length sample  to make equal for all files 
   x = read.AsspDataObj(file)$audio[1:fixedLength]
   xwave = transformToWave(x,rate)
-  str(xwave)
-  
-  
-  xPoweSpec = powerSpectrum(x,rate)
-  str(xPoweSpec)
-  
-  
-  xSpecgram = getSpecgram(x,fs = rate,winsize = winsize,overlap = overlap)
-  str(xSpecgram)
-  
-  
-  xSpectralInfo = spectralInfo(file)
-  str(xSpectralInfo)
-  
  
+   print('--------------------POWER SPEC-------------------------------------------')
   
-  spec = getSpec(xWave,winsize = winsize , rate)
-  specprops = GetSpecProps(spec,rate)
-  str(specprops)
+  #xPoweSpec = powerSpectrum(x,rate)
+  #print(xPoweSpec)
   
-   cr = zeroCrossingRate(xwave,rate,wl=NULL,overlap = noverlap)
-   print(sum(cr))
+   print('-------------------- PSECGRAM-------------------------------------------')
   
-   mfccs = getMfccs(xwave,rate)
-   str(mfccs)
+  #xSpecgram = getSpecgram(x,fs = rate,winsize = winsize,overlap = overlap)
+  #print(xSpecgram)
   
-  # we save all the values 
+   print('------------------ Spectralinfo---------------------------------------------')
+  # xSpectralInfo = spectralInfo(file)
+  # print(xSpectralInfo)
   
-  #xData = data.frame(xWave,xPoweSpec,xSpecgram,xSpectralInfo)
-  #data <- c(data,xData)
+  print('------------------ Specprop---------------------------------------------')
+  # 
+  # spec = getSpec(xWave,winsize = winsize , rate)
+  # specprops = GetSpecProps(spec,rate)
+  # str(specprops)
+  # 
+  # 
+  # for (i in 1:length(specprops)){
+  #   features = append(features,specprops[[i]])
+  # }
+  # features_names = append(features_names,names(specprops))
+
+
+   print('--------------------- CR ------------------------------------------')
+   # cr = zeroCrossingRate(xwave,rate,wl=NULL,overlap = noverlap)
+   # 
+   # features = append(features,cr)
+   # features_names = append(features_names,'zcr')
+  
+    print('--------------------------------MFCC -------------------------------')
+   
+    mfccs = getMfccs(xwave,rate)
+     str(mfccs)
+  
+  
+   # print(file)
+  #print(features)
+  #featurelist = c(featurelist,list(features))
+  #featurelist[j] = c(list(features))
+  
   
 }
+#str(featurelist)
+# 
+# data = as.data.frame(matrix(unlist(featurelist), nrow=length(unlist(featurelist[2]))))
+# 
+# length(features_names)
+# row.names(data) = features_names
+# 
+# data2 = t(data)
+
+#write.csv(data2,file = 'data.csv')
 
 
 ```
 
 
 
+We extract other features with python
+
+```{python}
+
+import os, sys
+import librosa 
+
+path = 'data_example/'
+files = []
+for i in range(1,151):
+  files.append(path+'f'+str(i)+'.au')
+
+print(files)
+  
+```
 
 
 
