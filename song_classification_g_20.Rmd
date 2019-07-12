@@ -205,6 +205,7 @@ transformToWave <- function(x, rate, bit = 16,reduceRate = FALSE, newRate = 1102
   xwv = Wave( as.numeric(x), samp.rate = rate, bit = bit)
   if(reduceRate){
     xwv = downsample(xwv, samp.rate = newRate)
+    xwv = xwv@left
   }
   #transformedWave <- ifelse(reduceRate,  downsample(xwv, samp.rate = newRate),xwv)
   return( xwv)
@@ -214,6 +215,31 @@ transformToWave <- function(x, rate, bit = 16,reduceRate = FALSE, newRate = 1102
 #### Spectrum analysis , power spectrum and energy band 
 ```{r, include=FALSE}
 
+
+# Get the spectogram of a wave 
+# x : wave array 
+# winsize : Fourier transform window size
+# fs : rate 
+# overlap : overlap with previous window, defaults to half the window length.
+getSpecgram <- function (x, winsize, fs ,overlap){
+  sp  <- specgram(x, n = winsize, Fs = fs,  overlap = overlap)
+  return(sp)
+  
+}
+
+# Compute the powerspectrum of the input signal
+# x : audio samples array 
+# rate : samples rate 
+# The output is a matrix, where each column represents a power spectrum 
+# for a given time frame and each row represents a frequency.
+
+ 
+powerSpectrum <- function(x , rate ){
+  out = powspec( as.numeric(x), rate)
+  out = rowMeans(out)
+  return(out)
+ 
+}
 
 #Frequency spectrum of a time wave
 
@@ -234,6 +260,14 @@ getSpec <- function (x, winsize, fs ){
   return(sp)
 }
 
+
+# Spectral info ------------------------------------------------------------
+# calculate the fundamental frequency contour
+# name : name of the file input
+spectralInfo <- function(name){
+   f0vals = ksvF0(name, toFile=F)
+   return(f0vals)
+}
 #-----------------------------------------------------------------------------------
 # To get spectral properties 
 
@@ -312,7 +346,7 @@ for (tm in 1:ntm){
 energy[energy < eps] <- eps
 energy = 10*log10(energy)
 
-return(dim(energy))
+return(energy)
   
   
 }
@@ -334,14 +368,14 @@ Basically we loop over the audio file, extracting all features and saving in in 
 
 rate = 22050
 newrate = 11050
-reduceRate = FALSE
+reduceRate =FALSE
 if(reduceRate) rate = newrate
 
 
 # STFT
 winsize  <- 2048 
 nfft     <- 2048 
-hopsize  <- 1024
+hopsize  <- 512
 overlap <- winsize - hopsize
 #scale = 40000
 
@@ -370,24 +404,32 @@ for( j in 1:N){
   
   # we only take the fixed length sample  to make equal for all files 
   x = read.AsspDataObj(file)$audio[1:fixedLength]
-  xwave = transformToWave(x,rate,reduceRate = TRUE)
+  xwave = transformToWave(x,rate,reduceRate = reduceRate )
  
-  #xPoweSpec = powerSpectrum(x,rate)
-  #print(xPoweSpec)
+  # Spectral Power
+  xPoweSpec = powerSpectrum(x,rate)
+  specPowermax = xPoweSpec[which.max(xPoweSpec)]
+  specPowerMin = xPoweSpec[which.min(xPoweSpec)]
+  features = append(features, specPowermax)
+  features = append(features, specPowerMin)
+  if(j==1) features_names =  append(features_names,'specPowermax')
+  if(j==1) features_names =  append(features_names,'specPowerMin')
   
   
-  #xSpecgram = getSpecgram(x,fs = rate,winsize = winsize,overlap = overlap)
-  #print(xSpecgram)
   
- 
-  # xSpectralInfo = spectralInfo(file)
-  # print(xSpectralInfo)
-  
-  
-  spec = getSpec(xwave , rate ,winsize = winsize)
-  specprops = GetSpecProps(spec,rate)
-  #str(specprops)
 
+  # Spectral Info
+ 
+  xSpectralInfo = spectralInfo(file)
+  freqContourMax = max(xSpectralInfo$F0)
+  features = append(features, freqContourMax)
+  if(j==1) features_names =  append(features_names,'FeqContourMax')
+  
+  
+  
+  ##  Spectral properties , Spectral centroid 
+  spec = getSpec(xwave , fs= rate ,winsize = winsize)
+  specprops = GetSpecProps(spec,rate)
   len = length(specprops)-1
   for (i in 1:len){
     features = append(features,specprops[[i]])
@@ -397,8 +439,8 @@ for( j in 1:N){
                                    )
 
 
-   # get ZeoCrossing Rate
-   cr = zeroCrossingRate(xwave,rate,wl=NULL,overlap = noverlap)
+   # Zero Crossing Rate
+   cr = zeroCrossingRate(x,rate,wl=NULL,overlap = 10)
    features = append(features,cr)
    if(j==1) features_names = append(features_names,'zcr')
   
@@ -406,15 +448,19 @@ for( j in 1:N){
     # Get MFCCs
     mfccs = getMfccs(xwave,rate)
     cm = colMeans(mfccs,na.rm = TRUE)
-
     features = append(features,cm)
     if(j==1) features_names = append(features_names, 
                                      c('mfcc1','mfcc2','mfcc3','mfcc4','mfcc5')
                                      )
     
-    
-    
-    
+    ## Energy band 
+
+     spgram = getSpecgram(x,winsize ,rate,overlap)
+     en = energyBands(spgram,fs = rate,nb=nb, lowB=lowB,eps=eps,winsize=winsize)
+     features = append(features,sum(rowMeans(en)))
+     if(j==1) features_names = append(features_names, 'energyBandSum'
+                                      #paste0('energy_band_',1:8)
+                                     )
     #-----------------------------------------------------------------------------
 
   featurelist[j] = c(list(features))
@@ -439,78 +485,75 @@ data1 = as.data.frame(matrix(unlist(featurelist),
 #
 features_names = c(features_names)
 row.names(data1) = features_names
-data1= t(data1)
+data= t(data1)
 #write.csv(data1,file = 'data1.csv')
 
 ```
 
 
+
+### Other features added with soundgen::analyse , but do not improve model quality
 ```{r}
-toget = c('ampl','dom','harmonics','loudness','peakFreq',
-          'peakFreqCut','pitch','pitchSpec' )
-toget_means = paste0(toget,'_mean')
+# toget = c('ampl','dom','harmonics','loudness','peakFreq',
+#           'peakFreqCut','pitch','pitchSpec' )
+# toget_means = paste0(toget,'_mean')
+# 
+# toget_sds = paste0(toget,'_sd')
+# 
+# toget_maxs = paste0(toget,'_max')
+#  
+# toget_final = c(toget_means,toget_sds)
+# 
+# featurelist2 = list() 
+# 
+# for (j in 1:N){
+# # retrieve sound file
+# file = ordFileList[j]
+# x = read.AsspDataObj(file)$audio[1:fixedLength]
+# xwave = transformToWave(x,rate,reduceRate = TRUE)
+# 
+#   
+# 
+# ## Perform analysis on sound file
+# df = analyze(xwave@left
+#              ,samplingRate = rate,
+#              summary = TRUE,
+#              plot = FALSE,
+#              windowLength = winsize
+#              
+#              
+#              )
+# 
+# 
+# # retrieve important features  
+# toget_values = df[toget_final]
+# 
+# features = c()
+#  for (i in 1:length(toget_final)){
+#     features = append(features,toget_values[[i]])
+#  }
+# 
+# 
+# featurelist2[j] = c(list(features))
+# print(j)
+# 
+# }
+# 
+# featurelist2
 
-toget_sds = paste0(toget,'_sd')
-
-toget_maxs = paste0(toget,'_max')
- 
-toget_final = c(toget_means,toget_sds)
-
-featurelist2 = list() 
-
-for (j in 1:N){
-# retrieve sound file
-file = ordFileList[j]
-x = read.AsspDataObj(file)$audio[1:fixedLength]
-xwave = transformToWave(x,rate,reduceRate = TRUE)
-
-  
-
-## Perform analysis on sound file
-df = analyze(xwave@left
-             ,samplingRate = rate,
-             summary = TRUE,
-             plot = FALSE,
-             windowLength = winsize
-             
-             
-             )
-
-
-# retrieve important features  
-toget_values = df[toget_final]
-
-features = c()
- for (i in 1:length(toget_final)){
-    features = append(features,toget_values[[i]])
- }
-
-
-featurelist2[j] = c(list(features))
-print(j)
-
-}
-
-featurelist2
-
-
-```
-
-
-```{r}
-
-data2 = as.data.frame(matrix(unlist(featurelist2),   
-                            nrow=length(unlist(featurelist2[1]))
-                            )
-                     )
-#
-features_names2 = c(toget_final)
-row.names(data2) = features_names2
-data2= t(data2)
-#write.csv(data2,file = 'data2.csv')
-
-str(data2)
-summary(data2)
+# 
+# data2 = as.data.frame(matrix(unlist(featurelist2),   
+#                             nrow=length(unlist(featurelist2[1]))
+#                             )
+#                      )
+# #
+# features_names2 = c(toget_final)
+# row.names(data2) = features_names2
+# data2= t(data2)
+# #write.csv(data2,file = 'data2.csv')
+# 
+# str(data2)
+# summary(data2)
 
 
 ```
@@ -519,85 +562,104 @@ summary(data2)
 We save the dataset  to a file
 
 ```{r}
-
-# data = cbind(data1,data2)
-# write.csv(data2,file = 'data.csv')
+ data = data.frame(labels,data)
+ write.csv(data,file = 'dataset.csv')
 
 ```
 
 ```{r}
-data = read.csv('data.csv',header = TRUE,sep = ',')[-1]
+data = read.csv('dataset.csv',header = TRUE,sep = ',')[-1]
 str(data)
-class(data)
-summary(data)
-row.names(data) = NULL
-length(data$ampl_mean)
-length(labels$genre)
 which(is.na(data))
 
 ```
 
 
+### Data preparation 
+
+```{r}
+
+# we standadize the data
+data.scaled = cbind(labels,scale(data[-1]))
+#data_scaled = data[-1]
+
+
+# Train-Test split
+library(caret)
+set.seed(13413) # set seed for reproducibility
+idx.tr = createDataPartition(y = data$genre, p = .75, list = FALSE)
+head(idx.tr)
+
+data.tr = data.scaled[ idx.tr, ]
+data.te = data.scaled[-idx.tr, ]
+
+# Take a look (nicely balanced)
+table(data.scaled$genre)
+
+```
 
 
 
-## Models to apply 
-### List of models to use and reasons (limit to models seen in class)
-### Models Implementation
-## Support Vector Machine
+
+### Classification
+#### RandomForest
 
 
 ```{r}
 
-library("e1071")
+library(randomForest)
+rf = randomForest(genre ~ ., data = data.scaled, 
+                  na.action = na.omit,
+                  importance = FALSE)
 
-
-x <- data
-y <- as.factor(labels$genre)
-dataset <- data.frame(data, labels$genre)
-
-  
-kernels <- list("linear","polynomial", "sigmoid","radial basis")
-Cs <- list(0.001, 0.01, 0.1, 1, 10)
-gammas <- list(0.001, 0.01, 0.1, 1)
-
-
-svmfit <- svm(y~., data=dataset, kernel = "linear", cost=Cs)
-svmfit
-
-
-print(svmfit)
-plot(svmfit,dataset)
-
-
-
-
-make.grid = function(x, n =75) {
-  grange = apply(x, 2, range)
-  x1 = seq(from = grange[1,1], to = grange[2,1], length = n)
-  x2 = seq(from = grange[1,2], to = grange[2,2], length = n)
-  expand.grid(X1 = x1, X2 = x2)
-}
-
-xgrid = make.grid(x)
-
-pred <- predict(svmfit, x)
-res <- pred-datappr[,y]
-
-
-plot(xgrid, col = c("red","blue")[as.numeric(pred)], pch = 20, cex = .2)
-points(x, col = y + 3, pch = 19)
-points(x[svmfit$index,], pch = 5, cex = 2)
+# Take a look
+rf
 
 ```
 
-## classification
-### Classification performance for each model
-### Chose the best model 
-### Determine each feature contribution to model
-### Maintain only the most important ones
-### Final classification
-## Map
+Lest see variables importance 
+```{r}
+rf.imp = importance(rf)
+rf.imp = rf.imp[  order(rf.imp, decreasing = T),   ]
+rf.imp
 
+```
+```{r}
+# Plot
+jnk = barplot( rf.imp, xaxt = "n" )
+text(x = jnk - .25, y = -.4, names(rf.imp), 
+     xpd = TRUE, srt = 45, cex = .5)
+
+```
+```{r}
+
+varImpPlot(rf, main = "Random Forest")
+
+```
+
+## reduce dimension 
+
+
+
+```{r}
+
+# Calculate eigenvalues & eigenvectors
+data.scaled.num = data.scaled[-1]
+data.cov <- cov(data.scaled.num)
+data.eigen <- eigen(data.cov)
+#str(dd.eigen)
+
+PVE <- data.eigen$values / sum(data.eigen$values)
+round(PVE, 2)
+
+
+(phi <- dd.eigen$vectors[,1:2])
+
+phi <- -phi
+row.names(phi) <- colnames(data.scaled.num)
+colnames(phi) <- c("PC1", "PC2")
+phi
+
+```
 
 # Part II -  Theory
