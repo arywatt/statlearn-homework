@@ -60,7 +60,7 @@ labelsFile
 
 # List the .au files
 auFiles <- list.files(auPath, pattern=glob2rx('*.au'), full.names=TRUE)
-auFiles
+
 
 # Number of files 
 N <- length(auFiles)
@@ -77,7 +77,7 @@ ordFileList = paste0(rep(paste0(auPath,'/f')),paste0(ord,rep('.au',N)))
 #ordFileList
 
 # let's get also labels for each files
-labels <- read.table(file=labelsFile, header=TRUE, sep=" ",col.names  = c('id','genre'))
+labels <- read.table(file=labelsFile, header=TRUE, sep=" ",col.names  = c('genre'))
  
 labels = labels['genre']
 dim(labels)
@@ -587,7 +587,7 @@ data.scaled = cbind(labels,scale(data[-1]))
 # Train-Test split
 library(caret)
 set.seed(13413) # set seed for reproducibility
-idx.tr = createDataPartition(y = data$genre, p = .75, list = FALSE)
+idx.tr = createDataPartition(y = data$genre, p = .65, list = FALSE)
 head(idx.tr)
 
 data.tr = data.scaled[ idx.tr, ]
@@ -595,6 +595,9 @@ data.te = data.scaled[-idx.tr, ]
 
 # Take a look (nicely balanced)
 table(data.scaled$genre)
+
+
+
 
 ```
 
@@ -608,23 +611,30 @@ table(data.scaled$genre)
 ```{r}
 
 library(randomForest)
-rf = randomForest(genre ~ ., data = data.scaled, 
+rf = randomForest(genre ~ .,
+                  data = data.tr,
                   na.action = na.omit,
-                  importance = FALSE)
+                  importance = FALSE,
+                  ntree = 1000
+                  )
 
 # Take a look
 rf
 
 ```
-
-Lest see variables importance 
 ```{r}
+pred = predict(rf, data.te)
+confusionMatrix(data.te$genre, pred)
+```
+
+Let's see variables importance 
+```{r}
+
 rf.imp = importance(rf)
 rf.imp = rf.imp[  order(rf.imp, decreasing = T),   ]
 rf.imp
 
-```
-```{r}
+
 # Plot
 jnk = barplot( rf.imp, xaxt = "n" )
 text(x = jnk - .25, y = -.4, names(rf.imp), 
@@ -637,28 +647,184 @@ varImpPlot(rf, main = "Random Forest")
 
 ```
 
-## reduce dimension 
+
+let's tune the model 
+
+```{r}
+
+library(randomForest)
+library(mlbench)
+library(caret)
+library(e1071)
+ 
+
+
+
+#10 folds repeat 3 times
+control <- trainControl(method='repeatedcv', 
+                        number=10, 
+                        repeats=3
+                       )
+#Metric compare model is Accuracy
+metric <- "Accuracy"
+
+
+rf.tune <- train(genre~., 
+                      data=data.tr, 
+                      method='rf', 
+                      metric=c('recall','accuracy'), 
+                      tuneLength = 15
+                      )
+
+
+### here we take the best model 
+rf.best = rf.tune$finalModel
+
+print(rf.tune)
+
+
+plot(rf.tune)
+
+
+
+ 
+```
+ 
+```{r}
+pred.best = predict(rf.best, data.te)
+
+confusionMatrix(data.te$genre, pred.best )
+
+
+```
 
 
 
 ```{r}
 
-# Calculate eigenvalues & eigenvectors
-data.scaled.num = data.scaled[-1]
-data.cov <- cov(data.scaled.num)
-data.eigen <- eigen(data.cov)
-#str(dd.eigen)
 
-PVE <- data.eigen$values / sum(data.eigen$values)
-round(PVE, 2)
+rf.imp = importance(rf.best)
+rf.imp = rf.imp[  order(rf.imp, decreasing = T),   ]
+rf.imp
 
 
-(phi <- dd.eigen$vectors[,1:2])
+# Plot
+jnk = barplot( rf.imp, xaxt = "n" )
+text(x = jnk - .25, y = -.4, names(rf.imp), 
+     xpd = TRUE, srt = 45, cex = .5)
 
-phi <- -phi
-row.names(phi) <- colnames(data.scaled.num)
-colnames(phi) <- c("PC1", "PC2")
-phi
+```
+
+
+## MAp
+### Principal compoennt
+
+We retrieve the Principal comonents
+```{r}
+   ### PCA ###
+pc <- princomp(data.scaled.num)
+pc
+
+```
+
+
+A description of the PCA
+
+```{r}
+summary(pc)
+```
+
+
+The Plot 
+
+```{r}
+plot(pc)
+```
+
+
+
+```{r}
+names(pc)
+```
+```{r}
+ncolo = ncol(data.scaled)
+colo = RColorBrewer::brewer.pal(ncolo, "Set1")
+plot( pc$scores[,1:2], col = colo[data.scaled$genre], 
+      pch = 25, cex = .7)
+
+```
+
+
+```{r}
+plot( pc$scores[,2:3], col = colo[data.scaled$genre], 
+      pch = 25, cex = .5)
+```
+```{r}
+
+suppressMessages(require(plotly, quietly = T))
+p <- plot_ly(data.frame(pc$scores), x = ~Comp.1, y = ~Comp.2, z = ~Comp.3, 
+             size = .1,
+             color = ~factor(data.scaled$genre), 
+             colors = RColorBrewer::brewer.pal(nlevels(factor(data.scaled$genre)), "Set1") ) %>%
+  add_markers() %>%
+  layout(scene = list(xaxis = list(title = 'Comp.1'),
+                      yaxis = list(title = 'Comp.2'),
+                      zaxis = list(title = 'Comp.3')))
+
+
+p
+
+```
+
+
+
+
+
+
+```{r}
+pc.data = pc$scores[,c(1,2,3,4,5,6,7,8)]
+pc.data.final = cbind(labels,pc.data)
+
+rf2 = randomForest(genre ~ ., data = pc.data.final, 
+                  na.action = na.omit,
+                  importance = FALSE,
+                  ntree = 1000
+                  )
+
+# Take a look
+rf
+
+
+
+```
+
+```{r}
+
+suppressMessages(require("dimRed", quietly = T))
+
+dimRedMethodList()
+
+# List of available datasets
+dataSetList()
+
+```
+
+```{r}
+# Define which methods to apply
+embed_methods <- c("PCA", "DiffusionMaps", "Isomap", "LLE")
+
+# Apply dimensionality reduction
+data_emb <- lapply(embed_methods, function(x) embed(data.scaled.num, x))
+```
+
+
+```{r}
+
+names(data_emb) <- embed_methods
+
+# Plot --------------------------------------------------------------------
+
+lapply(data_emb, plot, type = "2vars", pch = 19)
 
 ```
 
