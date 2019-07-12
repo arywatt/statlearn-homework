@@ -43,23 +43,18 @@ library(audio)
 suppressMessages(require(wrassp,  quietly = T))
 library(wrassp)
 
-
+library(soundgen)
 library(warbleR)
 library(tuneR)
 library(audiolyzR)
-library(reticulate)
-use_python("C:/Users/watt/Anaconda3/python.exe", required = T)
 
-knitr::opts_chunk$set(engine.path = list(
-  python = "C:/Users/watt/Anaconda3/python.exe"
-))
 
 ```
 
 ## Reading and describing Data
 ```{r}
 # My path to the data 
-auPath <- "data_example"
+auPath <- "hw_data"
 labelsFile <- paste0(auPath,'/labels.txt')
 labelsFile
 
@@ -79,13 +74,16 @@ we have a total of {N} songs in our dataset .
 ## Let's try to get the files in order 
 ord = c(1:N)
 ordFileList = paste0(rep(paste0(auPath,'/f')),paste0(ord,rep('.au',N)))
-ordFileList
+#ordFileList
 
 # let's get also labels for each files
-labels <- read.table(file=labelsFile, header=TRUE, sep=" ",col.names  = c('id','type'))
+labels <- read.table(file=labelsFile, header=TRUE, sep=" ",col.names  = c('id','genre'))
  
-labels
-?read.csv
+labels = labels['genre']
+dim(labels)
+str(labels)
+barplot(table(labels$genre))
+
 
 ```
 
@@ -105,12 +103,14 @@ for (i in 1:N) {
   min = attributes(x)$endRecord   # the samples length of the current file
   fixedLength <- ifelse(fixedLength<=min, fixedLength, min) # we take the minimum
 }
+
+fixedLength
 ```
 
 We can see from the output that The records were made at a sample rate of 22050hz 
 for a duration of 30 seconds and therefore  contains around 22050 * 30 = 661500 samples
 
-Now lets' plot rthe first file samples to geta general idea
+Now lets' plot the first file samples to get a general idea
 
 
 ```{r}
@@ -144,12 +144,12 @@ plot(x_axe,
 The zero-crossing rate is the rate of sign-changes along a signal, i.e., the rate at which the signal changes from positive to zero to negative or from negative to zero to positive.[1] This feature has been used heavily in both speech recognition and music information retrieval, being a key feature to classify percussive sounds.
 
 
-####  Spectral properties
+####  Spectral Centroid and others statistics 
 
 the spectral prperties are a set of statistics computed on the spectrum of an audio signal, sucha as 
 - Spectral Centroid ( most important one)
 - Spectral mean or median 
-- spectral quartiles
+- spectral quartiles , skewness and kurtosis
 
 The spectral centroid is a measure used in digital signal processing to characterise a spectrum. It indicates where the center of mass of the spectrum is located. Perceptually, it has a robust connection with the impression of brightness of a sound.
 We basically loop on on audio files, and compute some features using functions defined above .
@@ -157,24 +157,29 @@ We basically loop on on audio files, and compute some features using functions d
 It is calculated as the weighted mean of the frequencies present in the signal, determined using a Fourier transform, with their magnitudes as the weights
 
 
-#### Spectral roll Off
-
-The roll-off frequency is defined as the frequency under which some percentage (cutoff) of the total energy of the spectrum is contained. The roll-off frequency can be used to distinguish between harmonic (below roll-off) and noisy sounds (above roll-off).
-
 
 #### Mel Frequency Cepstral Coefficients
  Mel Frequency Cepstral Coefficients (MFCC) for an object of class Wave. In speech recognition MFCCs are used to extract the stimulus of the vocal tract from speech
  
  
-#### Chroma frequencies
 
-Chroma features are an interesting and powerful representation for music audio in which the entire spectrum is projected onto 12 bins representing the 12 distinct semitones (or chroma) of the musical octave. Since, in music, notes exactly one octave apart are perceived as particularly similar, knowing the distribution of chroma even without the absolute frequency (i.e. the original octave) can give useful musical information about the audio -- and may even reveal perceived musical similarity that is not apparent in the original spectra.
+####  Pitch and loudness 
+
+Pitch is a perceptual property of sounds that allows their ordering on a frequency-related scale, or more commonly, pitch is the quality that makes it possible to judge sounds as "higher" and "lower" in the sense associated with musical melodies. Pitch can be determined only in sounds that have a frequency that is clear and stable enough to distinguish from noise. Pitch is a major auditory attribute of musical tones, along with duration, loudness, and timbre.
 
 
-####  Pitch 
-#### Tmbral features
-####  Flux
-#### Rhythm features:
+With the soundgen library we can analyse the sound to retrieve some feature lke ,
+the average pitch, the loudness,the peak frequncies, whether sound contains voice or not , the harmonics. All thoses values will hell differentiate genre of music.
+Below an Exemple of  plot showing a classic music, a country music
+
+![Country music visualization](country.png)
+
+
+
+
+
+
+![Classic music visualization](classic.png)
 
 
 ### Implementation with R
@@ -209,44 +214,6 @@ transformToWave <- function(x, rate, bit = 16,reduceRate = FALSE, newRate = 1102
 #### Spectrum analysis , power spectrum and energy band 
 ```{r, include=FALSE}
 
-# Compute the powerspectrum of the input signal
-
-# x : audio samples array 
-# rate : samples rate 
-# The output is a matrix, where each column represents a power spectrum 
-# for a given time frame and each row represents a frequency.
-powerSpectrum <- function(x , rate ){
-  out = powspec( as.numeric(x), rate)
-  return(out)
-
-}
-
-
-# Spectral info ------------------------------------------------------------
-
-# calculate the fundamental frequency contour
-# name : name of the file input
-spectralInfo <- function(name){
-   f0vals = ksvF0("data_example/f1.au", toFile=F)
-   return(f0vals)
-}
-
-
-
-# --------------------------------------------------------------------
-
-# Get the spectogram of a wave 
-# x : wave array 
-# winsize : Fourier transform window size
-# fs : rate 
-# overlap : overlap with previous window, defaults to half the window length.
-getSpecgram <- function (x, winsize, fs ,overlap){
-  sp  <- specgram(as.numeric(x), n = winsize, Fs = fs,  overlap = overlap)
-  return(sp)
-  
-}
-
-#---------------------------------------------------------------------
 
 #Frequency spectrum of a time wave
 
@@ -263,7 +230,7 @@ getSpecgram <- function (x, winsize, fs ,overlap){
 # norm	#if TRUE the spectrum is normalised by its maximum.
 
 getSpec <- function (x, winsize, fs ){
-  sp  <- meanspec(x,  fs = fs, wl = winsize, fftw = FALSE,norm  =TRUE)
+  sp  <- meanspec(x,  fs = fs, wl = winsize, fftw = TRUE,norm  =TRUE,plot = FALSE)
   return(sp)
 }
 
@@ -311,9 +278,9 @@ GetSpecProps <- function(spec, fs){
 getMfccs <- function(x, fs){
   mfccs = melfcc(x, 
                  sr=fs,
-                 sumpower = FALSE,
-                 #♣numcep = 5,
-                 wintime = 2,
+                 #sumpower = FALSE,
+                 numcep = 5
+                 #wintime = 0.025,
                  #spec_out = FALSE
                  )
   return(mfccs)
@@ -345,10 +312,11 @@ for (tm in 1:ntm){
 energy[energy < eps] <- eps
 energy = 10*log10(energy)
 
-return(energy)
+return(dim(energy))
   
   
 }
+
 
 
 ``` 
@@ -367,13 +335,15 @@ Basically we loop over the audio file, extracting all features and saving in in 
 rate = 22050
 newrate = 11050
 reduceRate = FALSE
+if(reduceRate) rate = newrate
 
 
 # STFT
-winsize  <- 2048
-nfft     <- 2048
-hopsize  <- 512
+winsize  <- 2048 
+nfft     <- 2048 
+hopsize  <- 1024
 overlap <- winsize - hopsize
+#scale = 40000
 
 # Frequency bands selection
 nb   <- 2^3
@@ -382,7 +352,78 @@ eps  <- .Machine$double.eps
 # Number of seconds of the analyzed window
 corrtime     <- 15
 
+```
 
+
+```{r, include=FALSE}
+
+# the file list to use is our Ordered file list 
+featurelist = list()
+features_names = c()
+
+for( j in 1:N){
+
+  file = ordFileList[j]
+  features = c()
+  
+  
+  
+  # we only take the fixed length sample  to make equal for all files 
+  x = read.AsspDataObj(file)$audio[1:fixedLength]
+  xwave = transformToWave(x,rate,reduceRate = TRUE)
+ 
+  #xPoweSpec = powerSpectrum(x,rate)
+  #print(xPoweSpec)
+  
+  
+  #xSpecgram = getSpecgram(x,fs = rate,winsize = winsize,overlap = overlap)
+  #print(xSpecgram)
+  
+ 
+  # xSpectralInfo = spectralInfo(file)
+  # print(xSpectralInfo)
+  
+  
+  spec = getSpec(xwave , rate ,winsize = winsize)
+  specprops = GetSpecProps(spec,rate)
+  #str(specprops)
+
+  len = length(specprops)-1
+  for (i in 1:len){
+    features = append(features,specprops[[i]])
+  }
+  if(j==1) features_names = append(features_names,
+                                   paste0('spec_',names(specprops)[1:len])
+                                   )
+
+
+   # get ZeoCrossing Rate
+   cr = zeroCrossingRate(xwave,rate,wl=NULL,overlap = noverlap)
+   features = append(features,cr)
+   if(j==1) features_names = append(features_names,'zcr')
+  
+    
+    # Get MFCCs
+    mfccs = getMfccs(xwave,rate)
+    cm = colMeans(mfccs,na.rm = TRUE)
+
+    features = append(features,cm)
+    if(j==1) features_names = append(features_names, 
+                                     c('mfcc1','mfcc2','mfcc3','mfcc4','mfcc5')
+                                     )
+    
+    
+    
+    
+    #-----------------------------------------------------------------------------
+
+  featurelist[j] = c(list(features))
+   
+  
+}
+
+str(featurelist)
+str(features_names)
 
 
 
@@ -391,101 +432,110 @@ corrtime     <- 15
 
 ```{r}
 
-# the file list to use is our Ordered file list 
-featurelist = list()
-features_names = c()
+data1 = as.data.frame(matrix(unlist(featurelist),   
+                            nrow=length(unlist(featurelist[2]))
+                            )
+                     )
+#
+features_names = c(features_names)
+row.names(data1) = features_names
+data1= t(data1)
+#write.csv(data1,file = 'data1.csv')
 
-for( j in 1:N){
+```
+
+
+```{r}
+toget = c('ampl','dom','harmonics','loudness','peakFreq',
+          'peakFreqCut','pitch','pitchSpec' )
+toget_means = paste0(toget,'_mean')
+
+toget_sds = paste0(toget,'_sd')
+
+toget_maxs = paste0(toget,'_max')
  
-  print(j)
-  file = ordFileList[j]
+toget_final = c(toget_means,toget_sds)
+
+featurelist2 = list() 
+
+for (j in 1:N){
+# retrieve sound file
+file = ordFileList[j]
+x = read.AsspDataObj(file)$audio[1:fixedLength]
+xwave = transformToWave(x,rate,reduceRate = TRUE)
+
   
-  features = c()
-  features_names = c()
-  
-  
-  # we only take the fixed length sample  to make equal for all files 
-  x = read.AsspDataObj(file)$audio[1:fixedLength]
-  xwave = transformToWave(x,rate)
- 
-   print('--------------------POWER SPEC-------------------------------------------')
-  
-  #xPoweSpec = powerSpectrum(x,rate)
-  #print(xPoweSpec)
-  
-   print('-------------------- PSECGRAM-------------------------------------------')
-  
-  #xSpecgram = getSpecgram(x,fs = rate,winsize = winsize,overlap = overlap)
-  #print(xSpecgram)
-  
-   print('------------------ Spectralinfo---------------------------------------------')
-  # xSpectralInfo = spectralInfo(file)
-  # print(xSpectralInfo)
-  
-  print('------------------ Specprop---------------------------------------------')
-  # 
-  # spec = getSpec(xWave,winsize = winsize , rate)
-  # specprops = GetSpecProps(spec,rate)
-  # str(specprops)
-  # 
-  # 
-  # for (i in 1:length(specprops)){
-  #   features = append(features,specprops[[i]])
-  # }
-  # features_names = append(features_names,names(specprops))
+
+## Perform analysis on sound file
+df = analyze(xwave@left
+             ,samplingRate = rate,
+             summary = TRUE,
+             plot = FALSE,
+             windowLength = winsize
+             
+             
+             )
 
 
-   print('--------------------- CR ------------------------------------------')
-   # cr = zeroCrossingRate(xwave,rate,wl=NULL,overlap = noverlap)
-   # 
-   # features = append(features,cr)
-   # features_names = append(features_names,'zcr')
-  
-    print('--------------------------------MFCC -------------------------------')
-   
-    mfccs = getMfccs(xwave,rate)
-     str(mfccs)
-  
-  
-   # print(file)
-  #print(features)
-  #featurelist = c(featurelist,list(features))
-  #featurelist[j] = c(list(features))
-  
-  
+# retrieve important features  
+toget_values = df[toget_final]
+
+features = c()
+ for (i in 1:length(toget_final)){
+    features = append(features,toget_values[[i]])
+ }
+
+
+featurelist2[j] = c(list(features))
+print(j)
+
 }
-#str(featurelist)
-# 
-# data = as.data.frame(matrix(unlist(featurelist), nrow=length(unlist(featurelist[2]))))
-# 
-# length(features_names)
-# row.names(data) = features_names
-# 
-# data2 = t(data)
 
-#write.csv(data2,file = 'data.csv')
+featurelist2
 
 
 ```
 
 
+```{r}
 
-We extract other features with python
+data2 = as.data.frame(matrix(unlist(featurelist2),   
+                            nrow=length(unlist(featurelist2[1]))
+                            )
+                     )
+#
+features_names2 = c(toget_final)
+row.names(data2) = features_names2
+data2= t(data2)
+#write.csv(data2,file = 'data2.csv')
 
-```{python}
+str(data2)
+summary(data2)
 
-import os, sys
-import librosa 
 
-path = 'data_example/'
-files = []
-for i in range(1,151):
-  files.append(path+'f'+str(i)+'.au')
-
-print(files)
-  
 ```
 
+
+We save the dataset  to a file
+
+```{r}
+
+# data = cbind(data1,data2)
+# write.csv(data2,file = 'data.csv')
+
+```
+
+```{r}
+data = read.csv('data.csv',header = TRUE,sep = ',')[-1]
+str(data)
+class(data)
+summary(data)
+row.names(data) = NULL
+length(data$ampl_mean)
+length(labels$genre)
+which(is.na(data))
+
+```
 
 
 
@@ -494,6 +544,53 @@ print(files)
 ## Models to apply 
 ### List of models to use and reasons (limit to models seen in class)
 ### Models Implementation
+## Support Vector Machine
+
+
+```{r}
+
+library("e1071")
+
+
+x <- data
+y <- as.factor(labels$genre)
+dataset <- data.frame(data, labels$genre)
+
+  
+kernels <- list("linear","polynomial", "sigmoid","radial basis")
+Cs <- list(0.001, 0.01, 0.1, 1, 10)
+gammas <- list(0.001, 0.01, 0.1, 1)
+
+
+svmfit <- svm(y~., data=dataset, kernel = "linear", cost=Cs)
+svmfit
+
+
+print(svmfit)
+plot(svmfit,dataset)
+
+
+
+
+make.grid = function(x, n =75) {
+  grange = apply(x, 2, range)
+  x1 = seq(from = grange[1,1], to = grange[2,1], length = n)
+  x2 = seq(from = grange[1,2], to = grange[2,2], length = n)
+  expand.grid(X1 = x1, X2 = x2)
+}
+
+xgrid = make.grid(x)
+
+pred <- predict(svmfit, x)
+res <- pred-datappr[,y]
+
+
+plot(xgrid, col = c("red","blue")[as.numeric(pred)], pch = 20, cex = .2)
+points(x, col = y + 3, pch = 19)
+points(x[svmfit$index,], pch = 5, cex = 2)
+
+```
+
 ## classification
 ### Classification performance for each model
 ### Chose the best model 
