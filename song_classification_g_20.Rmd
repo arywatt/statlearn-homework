@@ -1,8 +1,8 @@
 ---
 title: "Statlearn - homework II"
 output:
-  word_document: default
   pdf_document: default
+  word_document: default
   html_document: default
 ---
 
@@ -581,7 +581,7 @@ which(is.na(data))
 
 # we standadize the data
 data.scaled = cbind(labels,scale(data[-1]))
-#data_scaled = data[-1]
+#data_scaled = data
 
 
 # Train-Test split
@@ -607,7 +607,7 @@ table(data.scaled$genre)
 ### Classification
 #### RandomForest
 
-
+We Build the model 
 ```{r}
 
 library(randomForest)
@@ -622,9 +622,14 @@ rf = randomForest(genre ~ .,
 rf
 
 ```
+
+Test the model 
+
 ```{r}
+
 pred = predict(rf, data.te)
 confusionMatrix(data.te$genre, pred)
+
 ```
 
 Let's see variables importance 
@@ -707,7 +712,6 @@ rf.imp = importance(rf.best)
 rf.imp = rf.imp[  order(rf.imp, decreasing = T),   ]
 rf.imp
 
-
 # Plot
 jnk = barplot( rf.imp, xaxt = "n" )
 text(x = jnk - .25, y = -.4, names(rf.imp), 
@@ -716,36 +720,36 @@ text(x = jnk - .25, y = -.4, names(rf.imp),
 ```
 
 
+
 ## MAp
-### Principal compoennt
+### Principal component
 
 We retrieve the Principal comonents
 ```{r}
+
+data.scaled.num = data.scaled[-1]
    ### PCA ###
 pc <- princomp(data.scaled.num)
-pc
-
-```
 
 
-A description of the PCA
+# A description of the PCA
 
-```{r}
+names(pc)
 summary(pc)
-```
 
+
+```
 
 The Plot 
 
 ```{r}
+
 plot(pc)
+
 ```
 
 
-
-```{r}
-names(pc)
-```
+PLot the two first principal components
 ```{r}
 ncolo = ncol(data.scaled)
 colo = RColorBrewer::brewer.pal(ncolo, "Set1")
@@ -754,12 +758,16 @@ plot( pc$scores[,1:2], col = colo[data.scaled$genre],
 
 ```
 
-
+PLot the two second principal components
 ```{r}
 plot( pc$scores[,2:3], col = colo[data.scaled$genre], 
       pch = 25, cex = .5)
 ```
+
+
 ```{r}
+
+
 
 suppressMessages(require(plotly, quietly = T))
 p <- plot_ly(data.frame(pc$scores), x = ~Comp.1, y = ~Comp.2, z = ~Comp.3, 
@@ -777,26 +785,7 @@ p
 ```
 
 
-
-
-
-
-```{r}
-pc.data = pc$scores[,c(1,2,3,4,5,6,7,8)]
-pc.data.final = cbind(labels,pc.data)
-
-rf2 = randomForest(genre ~ ., data = pc.data.final, 
-                  na.action = na.omit,
-                  importance = FALSE,
-                  ntree = 1000
-                  )
-
-# Take a look
-rf
-
-
-
-```
+# MAP
 
 ```{r}
 
@@ -815,17 +804,145 @@ embed_methods <- c("PCA", "DiffusionMaps", "Isomap", "LLE")
 
 # Apply dimensionality reduction
 data_emb <- lapply(embed_methods, function(x) embed(data.scaled.num, x))
-```
 
+```
 
 ```{r}
 
 names(data_emb) <- embed_methods
-
-# Plot --------------------------------------------------------------------
+# Plot ------------------------------------------------ 
 
 lapply(data_emb, plot, type = "2vars", pch = 19)
 
 ```
 
+
+## Predict new data point
+```{r}
+# Initiate  DataPoints 
+fileList = c() # enter the files list 
+
+
+```
+
+
+The we extract feature for new data 
+```{r}
+
+featurelist = list()
+features_names = c()
+
+for( j in 1:length(fileList)){
+
+  file = fileList[j]
+  features = c()
+  
+  
+  
+  # we only take the fixed length sample  to make equal for all files 
+  x = read.AsspDataObj(file)$audio
+  xwave = transformToWave(x,rate,reduceRate = reduceRate )
+ 
+  # Spectral Power
+  xPoweSpec = powerSpectrum(x,rate)
+  specPowermax = xPoweSpec[which.max(xPoweSpec)]
+  features = append(features, specPowermax)
+  if(j==1) features_names =  append(features_names,'specPowermax')
+  
+
+  # Spectral Info
+ 
+  xSpectralInfo = spectralInfo(file)
+  freqContourMax = max(xSpectralInfo$F0)
+  features = append(features, freqContourMax)
+  if(j==1) features_names =  append(features_names,'FeqContourMax')
+  
+  
+  
+  ##  Spectral properties , Spectral centroid 
+  spec = getSpec(xwave , fs= rate ,winsize = winsize)
+  specprops = GetSpecProps(spec,rate)
+  len = length(specprops)-1
+  for (i in 1:len){
+    features = append(features,specprops[[i]])
+  }
+  if(j==1) features_names = append(features_names,
+                                   paste0('spec_',names(specprops)[1:len])
+                                   )
+
+
+   # Zero Crossing Rate
+   cr = zeroCrossingRate(x,rate,wl=NULL,overlap = 10)
+   features = append(features,cr)
+   if(j==1) features_names = append(features_names,'zcr')
+  
+    
+    # Get MFCCs
+    mfccs = getMfccs(xwave,rate)
+    cm = colMeans(mfccs,na.rm = TRUE)
+    features = append(features,cm)
+    if(j==1) features_names = append(features_names, 
+                                     c('mfcc1','mfcc2','mfcc3','mfcc4','mfcc5')
+                                     )
+    
+    ## Energy band 
+
+     spgram = getSpecgram(x,winsize ,rate,overlap)
+     en = energyBands(spgram,fs = rate,nb=nb, lowB=lowB,eps=eps,winsize=winsize)
+     features = append(features,sum(rowMeans(en)))
+     if(j==1) features_names = append(features_names, 'energyBandSum'
+                                      #paste0('energy_band_',1:8)
+                                     )
+    #-----------------------------------------------------------------------------
+
+
+  featurelist[j] = c(list(features))
+   
+  
+}
+```
+We create a dataframe with features extracted 
+
+
+```{r}
+newdata = as.data.frame(matrix(unlist(featurelist),   
+                            nrow=length(unlist(featurelist[2]))
+                            )
+                     )
+#
+features_names = c(features_names)
+row.names(data1) = features_names
+newdata= t(newdata)[-1] # we remove the row names
+
+```
+
+
+
+We predict genre
+```{r}
+
+# pred.new is the pdictions arrays for all files to predict 
+# rf.best is our best model 
+pred.new = predict(rf.best, newdata)
+
+
+#to test the accurary
+genre = NULL    # this is the vectore of true gtype of music , to be initialized
+
+confusionMatrix(genre, pred.new ) # genre is the target column
+
+
+```
+
+
+
 # Part II -  Theory
+
+```{r}
+
+
+
+
+
+```
+
